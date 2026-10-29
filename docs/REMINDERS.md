@@ -21,7 +21,7 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 
 ## chess_logic/move_resolver.py and main.py (milestones 1 and 5)
 - [x] **Ambiguous human captures (decided).** When the human captures, occupancy only shows the from-square emptying. A queen on d1 that can take on d7 or g4 looks the same either way. Fix: `match_move(..., change, margin)` picks the candidate whose target square changed appearance most (a black piece swapped for a white one), using `occupancy.change_scores`. Milestone 1 tests use fake change scores: the clear winner is returned, a too-close call returns all candidates, and `change=None` returns all candidates.
-- [ ] Fallback when it's still ambiguous: should `main` ask the human to type the move (e.g. `d1g4`), or show a numbered list to pick from?
+- [x] Fallback when it's still ambiguous (decided): `main` lists the candidates and the human **types the move in UCI** (e.g. `d1g4`). Re-prompt if the typed move isn't legal or isn't one of the candidates.
 - [ ] Human promotion is assumed to be a queen (vision can't tell). Robot promotion: the human swaps the pawn for a queen when prompted.
 
 ## vision/camera.py (milestone 2)
