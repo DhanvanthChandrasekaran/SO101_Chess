@@ -24,9 +24,9 @@ Only `main.py` wires modules together. Modules must not import each other except
 | `vision/board_view.py` | image -> top-down board image | camera output type, calibration data |
 | `vision/occupancy.py` | top-down board -> 8x8 bool grid | board_view output type |
 | `chess_logic/engine.py` | Stockfish wrapper: board -> best move | python-chess only |
-| `chess_logic/move_resolver.py` | `find_human_move` (occupancy before/after -> human's legal move(s)), `get_robot_move` (move -> list of move/remove ops: captures, castling, en passant) | python-chess, numpy only |
+| `chess_logic/move_resolver.py` | `find_human_move` (occupancy before/after -> human's legal move(s)), `get_robot_move` (move -> list of move/remove steps: captures, castling, en passant) | python-chess, numpy only |
 | `control/kinematics.py` | square/xyz -> joint angles via lerobot `RobotKinematics` (placo + SO101 URDF) | config, `lerobot.model.kinematics` |
-| `control/motion.py` | ops -> waypoints/trajectory -> arm calls | kinematics, arm |
+| `control/motion.py` | steps -> waypoints/trajectory -> arm calls | kinematics, arm |
 | `control/arm.py` | hardware driver + `MockArm` | lerobot |
 | `calibration/*` | one-off scripts that write to `calibration/data/` | anything they need |
 | `tools/`, `tests/` | debugging and tests | anything |
@@ -39,7 +39,7 @@ Only `main.py` wires modules together. Modules must not import each other except
 - Define the coordinate frames and conventions once at the top (image pixels, top-down board image, board plane in meters, robot base frame; square indexing; occupancy array layout, including which index is rank 1 and which side the robot plays; joint angle units).
 - **Change the interface doc first, get my approval, then change code.** Never silently change a signature.
 - Prefer plain types: python-chess `Move`/`Board`, python-chess square ints (0-63), numpy arrays, floats, tuples, dicts. No custom classes across module boundaries unless I approve.
-- Ops format between chess_logic and control: `("move", from_sq, to_sq)` or `("remove", sq)`.
+- Steps format between chess_logic and control: `("move", start_square, end_square)` or `("remove", square)`.
 
 ## Working rules
 1. **Plan before coding.** For any non-trivial task, propose the plan and the files you will touch, wait for my approval, then implement.

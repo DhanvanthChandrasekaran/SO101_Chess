@@ -1,12 +1,16 @@
-"""Top-down board image -> 8x8 occupied grid."""
+"""Decides which of the 64 squares have a piece on them, by comparing with a photo of the empty board."""
 import numpy as np
 
 
-def square_scores(top: np.ndarray, empty_top: np.ndarray, vision_cfg: dict) -> np.ndarray:
-    """Per-square difference vs the empty-board reference -> (8,8) float32 [rank, file]."""
+def square_difference_scores(top_down: np.ndarray, empty_board_top_down: np.ndarray,
+                             vision_settings: dict) -> np.ndarray:
+    """Return an 8x8 grid of numbers: how different each square's centre looks from the empty board.
+
+    Bigger means more likely to hold a piece. Row 0 is rank 1. Raises ValueError if the two pictures differ in size.
+    """
     raise NotImplementedError
 
 
-def occupancy(scores: np.ndarray, vision_cfg: dict) -> np.ndarray:
-    """Threshold scores -> (8,8) bool [rank, file]."""
+def occupied_squares(difference_scores: np.ndarray, vision_settings: dict) -> np.ndarray:
+    """Return an 8x8 grid of True/False: True where the score is above the threshold in the settings."""
     raise NotImplementedError

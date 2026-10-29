@@ -1,1 +1,1 @@
-"""pytest: IK round-trip with forward kinematics."""
+"""pytest: the arm model reaches every square and gives back the same point when run in reverse."""

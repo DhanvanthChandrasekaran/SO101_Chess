@@ -1,1 +1,1 @@
-"""Live overlay of occupancy for debugging."""
+"""Shows the camera view with each square marked occupied or empty, for checking the vision by eye."""

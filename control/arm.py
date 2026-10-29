@@ -1,63 +1,66 @@
-"""lerobot SO101 wrapper + MockArm for no-hardware development."""
+"""Drives the real SO101 arm through lerobot, plus a pretend arm for working without hardware."""
 
 
 class Arm:
-    """Real SO101 follower via lerobot. Joint dicts use bare names, body joints in deg, gripper 0-100."""
+    """The real arm. Joint angles are in degrees; the gripper is 0-100."""
 
-    def __init__(self, hw_cfg: dict, arm_cfg: dict):
+    def __init__(self, hardware_settings: dict, arm_settings: dict):
         raise NotImplementedError
 
     def connect(self) -> None:
-        """Connect to the follower; raise ConnectionError if the port is missing."""
+        """Connect to the arm. Raises ConnectionError if it isn't plugged in."""
         raise NotImplementedError
 
-    def read(self) -> dict[str, float]:
-        """Current position of all 6 joints."""
+    def read_joint_angles(self) -> dict[str, float]:
+        """Return where all six joints are right now."""
         raise NotImplementedError
 
-    def send(self, target: dict[str, float]) -> dict[str, float]:
-        """Send a subset of joints, clamped to limits; return what was sent."""
+    def set_joint_targets(self, targets: dict[str, float]) -> dict[str, float]:
+        """Tell some or all joints where to go. Values past a joint's safe limit are cut back to the limit.
+
+        Returns what was actually sent. Doesn't wait for the arm to arrive.
+        """
         raise NotImplementedError
 
-    def set_gripper_torque(self, limit: int) -> None:
-        """Write gripper Max_Torque_Limit (0-1000)."""
+    def set_gripper_strength(self, torque_limit: int) -> None:
+        """Set how hard the gripper may squeeze (0-1000), so it stops on the piece instead of crushing it."""
         raise NotImplementedError
 
-    def torque_off(self) -> None:
-        """Disable torque on all motors; never raises."""
+    def turn_off_motors(self) -> None:
+        """Let the arm go limp. Never raises."""
         raise NotImplementedError
 
     def disconnect(self) -> None:
-        """Disconnect; safe to call twice."""
+        """Close the connection. Safe to call more than once."""
         raise NotImplementedError
 
 
 class MockArm:
-    """Same interface as Arm; read() returns the last sent (clamped) target."""
+    """A pretend arm with the same methods as Arm. It simply remembers the last targets it was given."""
 
-    def __init__(self, hw_cfg: dict, arm_cfg: dict, start: dict[str, float]):
+    def __init__(self, hardware_settings: dict, arm_settings: dict, starting_joint_angles: dict[str, float]):
         raise NotImplementedError
 
     def connect(self) -> None:
-        """No-op."""
+        """Does nothing."""
         raise NotImplementedError
 
-    def read(self) -> dict[str, float]:
-        """Last commanded position of all 6 joints."""
+    def read_joint_angles(self) -> dict[str, float]:
+        """Return the last targets it was given."""
         raise NotImplementedError
 
-    def send(self, target: dict[str, float]) -> dict[str, float]:
-        """Clamp and store the target; return what was stored."""
+    def set_joint_targets(self, targets: dict[str, float]) -> dict[str, float]:
+        """Cut values back to the safe limits, remember them, and return them."""
         raise NotImplementedError
 
-    def set_gripper_torque(self, limit: int) -> None:
-        """Record the limit."""
+    def set_gripper_strength(self, torque_limit: int) -> None:
+        """Remember the value."""
         raise NotImplementedError
 
-    def torque_off(self) -> None:
-        """Record torque off."""
+    def turn_off_motors(self) -> None:
+        """Remember that the motors were turned off."""
         raise NotImplementedError
 
     def disconnect(self) -> None:
-        """No-op."""
+        """Does nothing."""
         raise NotImplementedError

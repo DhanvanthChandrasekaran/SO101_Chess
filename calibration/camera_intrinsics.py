@@ -1,8 +1,8 @@
-"""Checkerboard photos -> calibration/data/camera_intrinsics.yaml (K, D, model, size)."""
+"""Measures the camera lens from checkerboard photos and saves it to calibration/data/camera_intrinsics.yaml."""
 
 
-def main(argv: list[str] | None = None) -> int:
-    """CLI entry; see module docstring."""
+def main(command_line_args: list[str] | None = None) -> int:
+    """Run the calibration described at the top of this file."""
     raise NotImplementedError
 
 
