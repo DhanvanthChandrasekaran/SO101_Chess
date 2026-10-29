@@ -2,4 +2,4 @@
 px_per_square: 50         # top-down image is 8*this px square
 patch_frac: 0.4           # sampled patch side / square side
 threshold: null           # TODO tune on saved images
-ambiguity_margin: null    # TODO change-score gap needed to pick one ambiguous capture (tune on M2 game photos)
+ambiguity_margin: null    # only used when game.yaml ambiguous_capture: auto (not built yet)

@@ -13,5 +13,5 @@ def occupancy(scores: np.ndarray, vision_cfg: dict) -> np.ndarray:
 
 
 def change_scores(top_before: np.ndarray, top_after: np.ndarray, vision_cfg: dict) -> np.ndarray:
-    """Per-square patch difference between two top-down images -> (8,8) float32 [rank, file]."""
+    """Per-square patch difference between two top-down images -> (8,8) float32 [rank, file]. Deferred (ambiguous_capture: auto)."""
     raise NotImplementedError
