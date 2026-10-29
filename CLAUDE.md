@@ -51,7 +51,13 @@ Only `main.py` wires modules together. Modules must not import each other except
 8. **Offline-first.** Vision must be developable from saved images in `data/images/`. Control must be developable with `MockArm`. Do not make anything require the physical setup to import or test.
 9. **Logging.** `main.py` logs every move with the before/after frames to `data/logs/<timestamp>/`.
 10. **Environment.** Use the existing conda env `lerobot` (`conda activate lerobot`). Never create a venv or a new conda env, and never install into base. The env already provides lerobot, numpy, opencv and pyyaml. Do not `pip install` opencv-python or anything that could replace those packages. Ask before adding any new package, and before installing, check what is already present (`pip list`). Stockfish is a system binary. LeRobot comes from my local clone, not vendored.
-11. **Git.** You may `git add` and `git commit` at the end of each verified step with a short descriptive message. Never `git push`, force-push, rewrite history, or change the remote unless I explicitly ask. Never commit `data/images/` or `data/logs/` (gitignored) or secrets. The repo path contains a space (`~/Projects/HAM ARC/SO101_Chess`), so always quote paths in shell commands.
+11. **Git.** You may `git add` and `git commit` at the end of each verified step. Every commit message has:
+    - **Subject:** imperative, ≤ 72 chars, prefixed with the area, e.g. `chess_logic: add GameOverError for finished games`. Areas: `vision`, `chess_logic`, `control`, `calibration`, `main`, `tools`, `tests`, `config`, `docs`, `repo`.
+    - **Blank line, then a body** (wrap at ~72 chars) with: *what* changed (files/functions), *why* (the decision or problem, and which milestone), and *how it was verified* (the exact test command and its result, or "docs only"). Mention any contract (INTERFACES.md) or config change explicitly.
+    - Any attribution trailers last. No subject-only commits, and no "wip"/"fix"/"update" subjects.
+    - Stage files by name (never `git add -A`/`.`) so unrelated local changes stay out.
+
+    Never `git push`, force-push, rewrite history, or change the remote unless I explicitly ask. Never commit `data/images/` or `data/logs/` (gitignored) or secrets. The repo path contains a space (`~/Projects/HAM ARC/SO101_Chess`), so always quote paths in shell commands.
 12. **Ask, don't guess.** If a physical value, frame convention, or hardware behavior is unknown, ask me and mark it TODO in the config. Do not invent numbers.
 
 ## Error handling policy (in `main.py`)
