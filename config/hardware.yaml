@@ -1,0 +1,7 @@
+# camera index, serial port, motor IDs
+camera:
+  index: 0
+  width: 1920
+  height: 1080
+arm:
+  port: /dev/ttyACM0   # follower

@@ -1,0 +1,1 @@
+"""Checkerboard photos -> distortion params."""
