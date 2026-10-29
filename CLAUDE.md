@@ -83,7 +83,7 @@ Failures must be explicit. Never silently continue on an unverified board.
 
 ## Commands
 - Env: `conda activate lerobot` (always, before anything else)
-- Install (once): `pip install -r requirements.txt`, which only adds python-chess and pytest. Stockfish is installed separately. This is an app run from the repo root, not an installable package: do not add a `[project]` table, `setup.py`, or `pip install -e .`.
+- Install (once): `pip install -r requirements.txt`, which only adds python-chess, pytest and matplotlib (for the vision windows). Stockfish is installed separately. This is an app run from the repo root, not an installable package: do not add a `[project]` table, `setup.py`, or `pip install -e .`.
 - Tests: `PYTHONPATH= pytest` (until ROS PYTHONPATH is fixed, see `docs/REMINDERS.md`)
 - Play: `python main.py` (add `--mock` to use `MockArm`)
 - Debug vision: `python tools/vision_live.py`

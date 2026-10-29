@@ -14,9 +14,9 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 | 5 | **Full game**: `main.py` loop with verify/retry/ask-human and logging; first `--mock --images` replay of the recorded game, then real | `main.py` | replay passes (including a forced mismatch → retry → ask human, a recorded ambiguous capture → ambiguity prompt → typed answer, and a robot special move made by the human); one full real game |
 
 ## Environment (anytime)
-- [ ] **ROS breaks pytest.** `~/.bashrc` line 134 runs `source /opt/ros/humble/setup.bash`, which exports `PYTHONPATH=/opt/ros/humble/...` (Python 3.10 packages). The `lerobot` env is Python 3.12, but Python still searches those ROS folders. pytest then auto-loads the ROS `launch_testing` plugin, which crashes (`No module named 'lark'`). Lerobot imports can pick up ROS packages too.
+- [x] **ROS breaks pytest.** (Fixed 2026-10-29: `PYTHONPATH` is cleared in the `lerobot` env.) `~/.bashrc` line 134 runs `source /opt/ros/humble/setup.bash`, which exports `PYTHONPATH=/opt/ros/humble/...` (Python 3.10 packages). The `lerobot` env is Python 3.12, but Python still searches those ROS folders. pytest then auto-loads the ROS `launch_testing` plugin, which crashes (`No module named 'lark'`). Lerobot imports can pick up ROS packages too.
   Fix (user's choice): run `conda env config vars set PYTHONPATH= -n lerobot`, then `conda deactivate && conda activate lerobot`. This clears PYTHONPATH only while `lerobot` is active, and ROS still works in other shells. Until then, use `PYTHONPATH= pytest`.
-- [ ] **placo install decision** (for lerobot IK). Command: `pip install "placo>=0.9.6,<0.9.16" "cmeel-urdfdom>=4,<5" "cmeel-tinyxml2<11"` (the pins lerobot uses for its `kinematics` extra). A dry run on 2026-10-29 showed 35 new packages (placo 0.9.15, pin/Pinocchio 3.4.0, cmeel-boost, eigenpy, meshcat, ipython, ...), and none of numpy, opencv or torch is replaced.
+- [x] **placo install decision** (Installed by the user 2026-10-29: placo 0.9.15, pin 3.4.0; numpy/opencv unchanged.) (for lerobot IK). Command: `pip install "placo>=0.9.6,<0.9.16" "cmeel-urdfdom>=4,<5" "cmeel-tinyxml2<11"` (the pins lerobot uses for its `kinematics` extra). A dry run on 2026-10-29 showed 35 new packages (placo 0.9.15, pin/Pinocchio 3.4.0, cmeel-boost, eigenpy, meshcat, ipython, ...), and none of numpy, opencv or torch is replaced.
 - [ ] **Is `data/test_images/` committed?** It's about 430 KB and not gitignored. `data/images/` and `data/logs/` are gitignored.
 
 ## chess_logic/move_resolver.py and main.py (milestones 1 and 5)
@@ -26,16 +26,16 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 ## vision/camera.py (milestone 2)
 - [x] Device found: `/dev/v4l/by-id/usb-Xitech_USB_Camera_20250606105-video-index0`. MJPG modes up to 2592x1944 at 30 fps; YUYV is slow at high resolution.
 - [x] 2592x1944 is the full field of view (about 20 fps). 1920x1080 is a crop, so don't use it. Only one app can stream at a time, so close Cheese first.
-- [ ] **The printed board labels are rotated 180° from our convention.** In the mounted setup (white at the robot's side), the printed "h8" corner is our a1. Ignore the printed letters: a1 = the dark square nearest the robot, on its left (bottom-left of the camera image).
-- [ ] How exposure and white balance are locked: v4l2-ctl or OpenCV properties, and the values.
+- [x] **The printed board labels are rotated 180° from our convention.** In the mounted setup (white at the robot's side), the printed "h8" corner is our a1. Ignore the printed letters: a1 = the dark square nearest the robot, on its left (bottom-left of the camera image). Confirmed by the user; `data/images/probe/probe_2592x1944.jpg` shows the dark a1 at the bottom-left with the robot at the bottom.
+- [ ] Exposure and white balance: locked with `v4l2-ctl` (decided). The values (`hardware.yaml: exposure`, `white_balance`) are still TODO and need the camera.
 
 ## calibration/camera_intrinsics.py
-- [ ] Checkerboard: inner-corner count, square size in mm. Fisheye or pinhole model (fisheye is probably better at 106°).
+- [ ] Checkerboard: inner-corner count and square size in mm (TODO in `vision.yaml`, user will print one). Lens model: fisheye (decided).
 
 ## calibration/board_corners.py and vision/board_view.py
 - [ ] Click order is a1, h1, h8, a8 (outer corners of the playing area), so image orientation doesn't matter. The user assumed a1 is at the bottom-left of the camera image; this is only for sanity-checking the clicks.
 - [ ] The **empty-board reference photo** (user is getting these): same camera pose, light and exposure as play, and the arm parked out of view.
-- [ ] The test images may be mirrored/flipped (user note). In `data/test_images/` the a-h letters read normally along the bottom with white at the bottom, but double-check before using them as ground truth.
+- [x] The test images are mirrored left to right (printed letters read backwards; checked 2026-10-29). Flip them before using them as ground truth. In `data/test_images/` the a-h letters read normally along the bottom with white at the bottom, but double-check before using them as ground truth.
 
 ## vision/occupancy.py
 - [ ] Threshold tuning on saved images. Watch for: the folding-board hinge seam between the d and e files, glare on light squares, dark pieces on dark squares (all visible in the test images).

@@ -103,7 +103,7 @@ stop (Ctrl-C anywhere)
 
 ### 2.12 Settings dicts
 `main` loads each YAML once and passes plain dicts in. Modules never read `config/` themselves. A parameter named `<x>_settings` is the dict from `config/<x>.yaml` (`camera_settings` is the `camera:` part of `hardware.yaml`; `engine_cfg` is the `engine:` part of `game.yaml`).
-Files: `hardware.yaml` (camera, arm port and id), `arm.yaml` (kinematics, tool, motion, gripper, safety), `board.yaml` (board, pieces, off-board spots), `vision.yaml` (top-down view and occupancy tuning), `game.yaml` (colour, first move, start FEN, Stockfish).
+Files: `hardware.yaml` (camera, arm port and id), `arm.yaml` (kinematics, tool, motion, gripper, safety), `board.yaml` (board, pieces, off-board spots), `vision.yaml` (lens calibration settings, top-down view and occupancy tuning), `game.yaml` (colour, first move, start FEN, Stockfish).
 `settings` (motion) = `{"arm": arm.yaml dict, "board": board.yaml dict, "arm_calibration": dict from load_arm_calibration}`.
 
 ### 2.13 Who moves the robot's pieces
@@ -116,7 +116,7 @@ Files: `hardware.yaml` (camera, arm port and id), `arm.yaml` (kinematics, tool, 
 ### vision/camera.py
 | | |
 |---|---|
-| `open_camera(camera_settings: dict) -> cv2.VideoCapture` | Opens `camera_settings["device"]` (a `/dev/v4l/by-id/...` path) at `width`x`height` and locks exposure and white balance from config. **Raises `RuntimeError`** if the camera can't be opened or the resolution is refused. |
+| `open_camera(camera_settings: dict) -> cv2.VideoCapture` | Opens `camera_settings["device"]` (a `/dev/v4l/by-id/...` path) at `width`x`height`, then locks exposure and white balance to the config values with `v4l2-ctl` (manual exposure, auto white balance off). **Raises `RuntimeError`** if the camera can't be opened, the resolution is refused, `exposure` or `white_balance` is still null in config, or `v4l2-ctl` fails. |
 | `take_photo(camera: cv2.VideoCapture, old_frames_to_skip: int) -> np.ndarray` | Reads and discards `old_frames_to_skip` buffered frames (`hardware.yaml: flush_frames`), then returns a fresh `(H,W,3) uint8 BGR` photo. **Raises `RuntimeError`** if the read fails. |
 | `load_lens_calibration(path: str) -> dict` | Returns `{"camera_matrix": (3,3) float64, "distortion": (4,) or (5,) float64, "lens_model": "fisheye" or "pinhole", "image_size": (W, H) int}`. **Raises `FileNotFoundError`**. |
 | `undistort(photo: np.ndarray, lens_calibration: dict) -> np.ndarray` | Takes a raw photo and returns an undistorted one with the same shape and dtype (`balance`/`alpha` = 0, so pixels outside the original are black). **Raises `ValueError`** if the photo size != `lens_calibration["image_size"]`. |
@@ -224,6 +224,10 @@ Non-capture candidates have no "capturing" part. It accepts the full UCI move, t
 | `calibration/arm_board.py --park` (teleop to a safe pose out of camera view) | `park_pose.yaml` | `{joint: deg}` for all 6 joints | `kinematics.load_arm_calibration` |
 | `calibration/arm_board.py --squares a1 h1 h8 a8 d4 ...` (teleop the TCP onto each square center at z=0) | `arm_board.yaml` | `board_to_robot_transform` 4x4; `samples` list of `{square, point_from_robot}`; `square_corrections` list of `{board_x_y, correction_x_y}` = leftover error after the fit | `kinematics.load_arm_calibration` |
 
+Command-line options of the two vision calibration scripts (both default to writing `calibration/data/`; `--output-folder` sends the files elsewhere, e.g. `data/synthetic/calibration/` for synthetic runs):
+- `camera_intrinsics.py --images DIR [--inner-corners COLS ROWS] [--square-mm MM] [--output-folder DIR]`. The checkerboard defaults and `lens_model` come from `config/vision.yaml`.
+- `board_corners.py [--photo RAW_PHOTO] [--lens LENS_YAML] [--corners U V U V U V U V] [--output-folder DIR]`. Without `--photo` it takes one photo with the camera. Without `--corners` it opens a matplotlib window to click a1, h1, h8, a8 on the undistorted photo, then shows the top-down view with a1 labelled and saves only after you confirm. `--corners` gives the four undistorted pixel positions directly (no window).
+
 You can extend the sparse square corrections by listing more squares on the `--squares` command. Interpolation uses all of them automatically.
 The lerobot motor calibration (`~/.cache/huggingface/lerobot/calibration/robots/so_follower/HAM_follower_001.json`) is owned by lerobot and only referenced through `hardware.yaml: arm.id`.
 The URDF is an external file, like the lerobot clone, referenced through `arm.yaml: urdf_path`. It is not vendored.
@@ -233,7 +237,8 @@ The URDF is an external file, like the lerobot clone, referenced through `arm.ya
 |---|---|
 | `camera.take_photo/undistort` | `tools/vision_live.py --save` writes the undistorted frame: straight board edges should look straight. |
 | `board_view.top_down_view` | `tools/vision_live.py` draws the 8x8 grid on the top-down image: grid lines should fall on the square edges, with a1 at the bottom-left. |
-| `occupancy.*` | `tools/vision_live.py --images data/images/` shows a score heatmap and occupancy for saved start/mid-game photos. Visual check. The first samples are `data/test_images/` (hand-held, 1280x720, start position, white at the bottom). |
+| `occupancy.*` | `tools/vision_live.py --images data/images/` shows a score heatmap and occupancy for saved start/mid-game photos. Visual check. The first samples are `data/test_images/` (hand-held, 1280x720, start position, white at the bottom, **mirrored left to right**, no empty-board photo). |
+| vision, offline (synthetic) | `python tools/make_synthetic.py` writes `data/synthetic/` (gitignored): rendered photos from a simulated overhead fisheye camera, with known answers in `truth.yaml` (lens values, raw-pixel corners a1, h1, h8, a8) and `labels.yaml` (FEN per photo; the game's moves). Subfolders: `checkerboard/`, `empty_board.jpg`, `positions/`, `game/`, and `calibration/` for what the calibration scripts write with `--output-folder`. `tools/vision_live.py --images <folder>` prints the percentage of squares correct when the folder has a `labels.yaml`, and for `game/` checks that `find_human_move` returns each recorded move. Never mixed with real photos. |
 | `engine.*` | pytest smoke test (skipped if the binary is missing): `best_move` on the start position returns a legal move. |
 | `move_resolver.*` | `tests/test_chess_logic.py`: quiet, capture, castling both sides, en passant, promotion → queen, ambiguous slider capture (>1), noise (`[]`), and `get_robot_move` for each. |
 | `kinematics.*` | `tests/test_kinematics.py`: `joint_angles_for` → `gripper_position_for` round-trip on all 64 squares and the graveyard, `square_center_on_board` corners, `None` for unreachable targets. Skipped (`pytest.importorskip("placo")`) if placo or the URDF is missing. |
@@ -253,4 +258,7 @@ The URDF is an external file, like the lerobot clone, referenced through `arm.ya
 - Approved: the robot's special moves (castling, en passant, promotion) are made by the human when prompted; the arm does quiet moves and captures (§2.13). `get_robot_move` is unchanged.
 - Workspace violations raise in `plan_waypoints`. `Arm.set_joint_targets` still clamps joints as the last line of defense.
 - Approved: plain-language names (CLAUDE.md rule 13) for vision, control and main: e.g. `grab` → `take_photo`, `warp` → `top_down_view`, `ik`/`fk` → `joint_angles_for`/`gripper_position_for`, `plan_ops`/`execute` → `plan_waypoints`/`run_waypoints`, `ctx` → `settings`, `acal` → `arm_calibration`. Motion's outputs are called waypoints, so "steps" means only `get_robot_move`'s output. Types and behaviour unchanged.
+- Approved: exposure and white balance are locked with `v4l2-ctl` (OpenCV's V4L2 exposure properties are unreliable). `open_camera` refuses to run on auto values.
+- Approved: matplotlib (not OpenCV windows, since the env has `opencv-python-headless`) for the corner clicks and `tools/vision_live.py`.
+- Approved: synthetic vision data from `tools/make_synthetic.py` in `data/synthetic/`, so milestone-2 code can be developed without the camera or pieces. Real photos are still the done-when check.
 - Deferred items with reminders are in `docs/REMINDERS.md`.

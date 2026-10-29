@@ -2,3 +2,9 @@
 px_per_square: 50         # top-down image is 8*this px square
 patch_frac: 0.4           # sampled patch side / square side
 threshold: null           # TODO tune on saved images
+
+# Lens calibration (calibration/camera_intrinsics.py)
+lens_model: fisheye       # 106 deg diagonal FOV; pinhole is the fallback
+checkerboard:
+  inner_corners: [null, null]  # TODO [columns, rows] of inner corners on the printed board
+  square_mm: null              # TODO measured side of one printed square
