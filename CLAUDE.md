@@ -24,7 +24,7 @@ Only `main.py` wires modules together. Modules must not import each other except
 | `vision/board_view.py` | image -> top-down board image | camera output type, calibration data |
 | `vision/occupancy.py` | top-down board -> 8x8 bool grid | board_view output type |
 | `chess_logic/engine.py` | Stockfish wrapper: board -> best move | python-chess only |
-| `chess_logic/move_resolver.py` | `match_move` (occupancy before/after -> human's legal move(s)), `ops_for` (move -> list of move/remove ops: captures, castling, en passant) | python-chess, numpy only |
+| `chess_logic/move_resolver.py` | `find_human_move` (occupancy before/after -> human's legal move(s)), `get_robot_move` (move -> list of move/remove ops: captures, castling, en passant) | python-chess, numpy only |
 | `control/kinematics.py` | square/xyz -> joint angles via lerobot `RobotKinematics` (placo + SO101 URDF) | config, `lerobot.model.kinematics` |
 | `control/motion.py` | ops -> waypoints/trajectory -> arm calls | kinematics, arm |
 | `control/arm.py` | hardware driver + `MockArm` | lerobot |

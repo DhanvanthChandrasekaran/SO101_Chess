@@ -23,13 +23,13 @@ perceive (used after every move, human or robot)
   main -> occupancy.occupancy(scores, vcfg)             -> occ            (8,8) bool
 
 human turn (after spacebar)
-  main -> move_resolver.match_move(board, before, after) -> list[chess.Move]  (0, 1 or many; many -> ambiguity prompt)
+  main -> move_resolver.find_human_move(board, before, after) -> list[chess.Move]  (0, 1 or many; many -> ambiguity prompt)
 
 robot turn
   main -> engine.best_move(eng, board, engine_cfg)      -> chess.Move
   if move is special (§2.13): main prints it, the human makes it on the board, presses spacebar -> go to verify
   else:
-  main -> move_resolver.ops_for(board, move)            -> list[op tuple]
+  main -> move_resolver.get_robot_move(board, move)            -> list[op tuple]
   main -> motion.plan_ops(ops, heights, ctx)            -> list[step tuple]
           motion -> kinematics.square_xy / board_to_base / tool_pitch / ik
   main -> motion.execute(arm, steps, ctx)               -> None
@@ -37,7 +37,7 @@ robot turn
   main -> motion.park(arm, ctx)                         -> None   (arm out of camera view)
 
 verify (after robot move, and at startup)
-  main -> move_resolver.expected_occupancy(board)       -> (8,8) bool; main compares with perceived occ
+  main -> move_resolver.expected_board_state(board)       -> (8,8) bool; main compares with perceived occ
 
 abort (Ctrl-C anywhere)
   main -> motion.park(arm, ctx) -> arm.torque_off() -> arm.disconnect()   (second Ctrl-C: torque_off at once)
@@ -108,8 +108,8 @@ Files: `hardware.yaml` (camera, arm port and id), `arm.yaml` (kinematics, tool, 
 
 ### 2.13 Who moves the robot's pieces
 - The **arm** executes the robot's normal moves: quiet moves and ordinary captures (captured piece to the graveyard, then the move).
-- **Special moves are made physically by the human** when prompted: castling, en passant and promotion. `main` decides with python-chess: `board.is_castling(m) or board.is_en_passant(m) or m.promotion is not None`. It prints the move (SAN and UCI; for promotion, "replace the pawn with a queen"), waits for spacebar, then runs the normal verify step against `expected_occupancy`.
-- `ops_for` still returns full ops for special moves (unchanged contract and tests), so handing them to the arm later only changes `main`. See `docs/OPTIONAL_IMPROVEMENTS.md`.
+- **Special moves are made physically by the human** when prompted: castling, en passant and promotion. `main` decides with python-chess: `board.is_castling(m) or board.is_en_passant(m) or m.promotion is not None`. It prints the move (SAN and UCI; for promotion, "replace the pawn with a queen"), waits for spacebar, then runs the normal verify step against `expected_board_state`.
+- `get_robot_move` still returns full ops for special moves (unchanged contract and tests), so handing them to the arm later only changes `main`. See `docs/OPTIONAL_IMPROVEMENTS.md`.
 
 ## 3. Function contracts
 
@@ -153,15 +153,15 @@ Example: `best_move(eng, chess.Board(), cfg)` might return `Move.from_uci("e2e4"
 ### chess_logic/move_resolver.py
 | | |
 |---|---|
-| `expected_occupancy(board: chess.Board) -> np.ndarray` | `(8,8) bool`: True where python-chess has a piece. Never fails. |
-| `match_move(board: chess.Board, before: np.ndarray, after: np.ndarray) -> list[chess.Move]` | Finds the human's move. `board` is the position before the move (unchanged). `before` and `after` are perceived `(8,8) bool`. Returns every legal move `m` for which the squares changed by `m` (from `expected_occupancy`) equal `before ^ after`. Promotions to the same square are merged into the **queen** promotion. **Never raises.** `[]` means no match, 1 element means resolved, and more than one means ambiguous (a capture shows only its from-square emptying); `main` then shows the ambiguity prompt (see main.py below). |
-| `ops_for(board: chess.Board, move: chess.Move) -> list[tuple]` | `board` is the position **before** `move` (unchanged). Returns ops (§2.11), with removals first. **Raises `ValueError`** if `move` is illegal. |
+| `expected_board_state(board: chess.Board) -> np.ndarray` | `(8,8) bool`: True where python-chess has a piece. Never fails. |
+| `find_human_move(board: chess.Board, before: np.ndarray, after: np.ndarray) -> list[chess.Move]` | Finds the human's move. `board` is the position before the move (unchanged). `before` and `after` are perceived `(8,8) bool`. Returns every legal move `m` for which the squares changed by `m` (from `expected_board_state`) equal `before ^ after`. Promotions to the same square are merged into the **queen** promotion. **Never raises.** `[]` means no match, 1 element means resolved, and more than one means ambiguous (a capture shows only its from-square emptying); `main` then shows the ambiguity prompt (see main.py below). |
+| `get_robot_move(board: chess.Board, move: chess.Move) -> list[tuple]` | `board` is the position **before** `move` (unchanged). Returns ops (§2.11), with removals first. **Raises `ValueError`** if `move` is illegal. |
 
 Comparing changed squares (`before ^ after`) instead of the whole grid means that a square vision consistently misreads doesn't break matching.
 
-`match_move` example: with a white queen on d1 that can take on d7 or g4, occupancy shows only that d1 emptied, so it returns both `[Move.from_uci("d1d7"), Move.from_uci("d1g4")]`.
+`find_human_move` example: with a white queen on d1 that can take on d7 or g4, occupancy shows only that d1 emptied, so it returns both `[Move.from_uci("d1d7"), Move.from_uci("d1g4")]`.
 
-`ops_for` examples:
+`get_robot_move` examples:
 - Quiet move e2e4: `[("move", 12, 28)]`
 - Capture e4xd5: `[("remove", 35), ("move", 28, 35)]`
 - White castling O-O: `[("move", 4, 6), ("move", 7, 5)]` (king first, then rook)
@@ -203,7 +203,7 @@ Example: `plan_ops([("move", 12, 28)], {12: 0.028}, ctx)` gives about 10 steps, 
 
 ### main.py (not imported by anyone)
 `main(argv: list[str] | None = None) -> int`, with flags `--mock` and `--images DIR` (offline frames). Exit code 0 means the game ended normally, 1 means aborted.
-**Ambiguity prompt** (`match_move` returns more than one move). `main` builds it from python-chess (colour, piece name, squares):
+**Ambiguity prompt** (`find_human_move` returns more than one move). `main` builds it from python-chess (colour, piece name, squares):
 ```
 I couldn't tell which capture you made.
 Your black queen on d8 moved. It could have gone to:
@@ -235,7 +235,7 @@ The URDF is an external file, like the lerobot clone, referenced through `arm.ya
 | `board_view.warp` | `tools/vision_live.py` draws the 8x8 grid on the top-down image: grid lines should fall on the square edges, with a1 at the bottom-left. |
 | `occupancy.*` | `tools/vision_live.py --images data/images/` shows a score heatmap and occupancy for saved start/mid-game photos. Visual check. The first samples are `data/test_images/` (hand-held, 1280x720, start position, white at the bottom). |
 | `engine.*` | pytest smoke test (skipped if the binary is missing): `best_move` on the start position returns a legal move. |
-| `move_resolver.*` | `tests/test_chess_logic.py`: quiet, capture, castling both sides, en passant, promotion → queen, ambiguous slider capture (>1), noise (`[]`), and `ops_for` for each. |
+| `move_resolver.*` | `tests/test_chess_logic.py`: quiet, capture, castling both sides, en passant, promotion → queen, ambiguous slider capture (>1), noise (`[]`), and `get_robot_move` for each. |
 | `kinematics.*` | `tests/test_kinematics.py`: IK→FK round-trip on all 64 squares and the graveyard, `square_xy` corners, `None` for unreachable targets. Skipped (`pytest.importorskip("placo")`) if placo or the URDF is missing. |
 | `arm` / `motion` | `python main.py --mock` logs the steps; `tests/hardware/pick_place.py e2 e4 --mock` prints the joint trajectory. Real arm only by hand. |
 | `main` | `python main.py --mock --images data/images/game1/` replays a recorded game. |
@@ -245,10 +245,11 @@ The URDF is an external file, like the lerobot clone, referenced through `arm.ya
 - Approved: variable tool pitch (§2.9). CLAUDE.md is updated.
 - Approved: configs split into `vision.yaml` and `game.yaml`.
 - Approved: lerobot `RobotKinematics` for IK/FK, custom IK deferred. This needs `placo` (pending your install decision).
-- `match_move` returns a list (ambiguous slider captures). Approved: the human is shown the candidate moves and types one. Auto-resolving with per-square change scores was removed from the contract (signature, `occupancy.change_scores`, config keys); it is in OPTIONAL_IMPROVEMENTS.md and needs a contract change to add back.
+- `find_human_move` returns a list (ambiguous slider captures). Approved: the human is shown the candidate moves and types one. Auto-resolving with per-square change scores was removed from the contract (signature, `occupancy.change_scores`, config keys); it is in OPTIONAL_IMPROVEMENTS.md and needs a contract change to add back.
 - Occupancy is compared against an empty-board reference photo.
 - Approved: chess_logic contracts (engine, move_resolver).
 - Approved: `engine.GameOverError(ValueError)` crosses the boundary, so `main` can catch game over separately and show the result. Engine failures propagate; restart-once is in OPTIONAL_IMPROVEMENTS.
-- Approved: the robot's special moves (castling, en passant, promotion) are made by the human when prompted; the arm does quiet moves and captures (§2.13). `ops_for` is unchanged.
+- Approved: `move_resolver` functions renamed for readability: `expected_occupancy` → `expected_board_state`, `match_move` → `find_human_move`, `ops_for` → `get_robot_move`. Behaviour unchanged.
+- Approved: the robot's special moves (castling, en passant, promotion) are made by the human when prompted; the arm does quiet moves and captures (§2.13). `get_robot_move` is unchanged.
 - Workspace violations raise in `plan_ops`. `Arm.send` still clamps joints as the last line of defense.
 - Deferred items with reminders are in `docs/REMINDERS.md`.
