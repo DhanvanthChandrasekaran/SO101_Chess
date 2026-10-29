@@ -8,9 +8,8 @@ def expected_occupancy(board: chess.Board) -> np.ndarray:
     raise NotImplementedError
 
 
-def match_move(board: chess.Board, before: np.ndarray, after: np.ndarray,
-               change: np.ndarray | None = None, margin: float = 0.0) -> list[chess.Move]:
-    """Legal moves whose changed squares equal before ^ after; ties broken by change at to_square if clear by margin."""
+def match_move(board: chess.Board, before: np.ndarray, after: np.ndarray) -> list[chess.Move]:
+    """Legal moves whose changed squares equal before ^ after (promotions as queen); >1 means ambiguous."""
     raise NotImplementedError
 
 

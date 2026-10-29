@@ -14,7 +14,7 @@ Each entry lists where the extension hooks in, so it can be added without changi
 - **Human under-promotion.** Today `match_move` assumes a queen. `main` could ask on the keyboard when a pawn reaches the last rank.
 
 ## Captures
-- **Auto-resolve ambiguous captures.** Build `occupancy.change_scores` (per-square before/after patch difference; a capture swaps piece colour on the target square, so it changes a lot). Then set `game.yaml: ambiguous_capture: auto` and tune `vision.yaml: ambiguity_margin` on recorded game photos. The contract already has `match_move(..., change, margin)`, so only `occupancy.py` and `main` change. The human prompt stays as the fallback.
+- **Auto-resolve ambiguous captures.** Build `occupancy.change_scores` (per-square before/after patch difference; a capture swaps piece colour on the target square, so it changes a lot). Add `change` ((8,8) float32) and `margin` (float, from a new `vision.yaml: ambiguity_margin` tuned on recorded game photos) back to `match_move`: when several candidates remain, return the one whose `to_square` change score beats the runner-up by more than `margin`. Contract change (INTERFACES.md first): `match_move` signature, a new `occupancy.change_scores` row, and the human-turn data flow. The human prompt stays as the fallback.
 - **Multiple graveyard slots.** `graveyard_xy_m` is already a list. `motion.plan_ops` would take a slot index (or a capture count) to fill the slots in order.
 
 ## Engine

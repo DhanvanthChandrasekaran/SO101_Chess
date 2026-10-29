@@ -2,8 +2,6 @@
 robot_color: white        # only "white" supported for now
 robot_moves_first: true   # only true supported for now
 start_fen: null           # null = standard start position
-ambiguous_capture: ask    # ask = list the candidate moves, human types one
-                          # auto = pick by occupancy.change_scores (not built yet, see OPTIONAL_IMPROVEMENTS.md)
 engine:
   path: /usr/games/stockfish  # Stockfish 14.1 (apt)
   think_time_s: 0.5
