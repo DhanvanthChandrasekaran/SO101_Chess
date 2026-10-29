@@ -60,6 +60,12 @@ Only `main.py` wires modules together. Modules must not import each other except
 
     Never `git push`, force-push, rewrite history, or change the remote unless I explicitly ask. Never commit `data/images/` or `data/logs/` (gitignored) or secrets. The repo path contains a space (`~/Projects/HAM ARC/SO101_Chess`), so always quote paths in shell commands.
 12. **Ask, don't guess.** If a physical value, frame convention, or hardware behavior is unknown, ask me and mark it TODO in the config. Do not invent numbers.
+13. **Plain-language code.** Names, docstrings and comments must make sense to someone who knows neither this project nor chess-programming or numpy jargon.
+    - Names are full, descriptive words: `squares_seen_changing`, `possible_moves`, `start`/`end`, `stockfish`; not `seen`, `occ`, `frm`, `eng`, `ops`, `m`.
+    - Docstrings say in plain sentences what goes in, what comes out and when it fails, e.g. "Return an 8x8 grid of True/False: True where a piece should be. Row 0 is rank 1." Not shorthand like "(8,8) bool [rank, file]" or "before ^ after". Keep them short (1-3 lines plus a line on inputs/failure if needed).
+    - Prefer plain operators and steps over clever ones (`!=` instead of `^` for "changed"; a named variable instead of a nested expression).
+    - Add a short comment wherever the *why* isn't obvious (e.g. why en passant is checked before captures).
+    - Parameter names in `docs/INTERFACES.md` follow the same rule. The precise types, shapes and frames stay in INTERFACES.md, not in docstrings.
 
 ## Error handling policy (in `main.py`)
 After each robot move, compare the observed occupancy with what python-chess expects.

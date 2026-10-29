@@ -26,7 +26,7 @@ human turn (after spacebar)
   main -> move_resolver.find_human_move(board, before, after) -> list[chess.Move]  (0, 1 or many; many -> ambiguity prompt)
 
 robot turn
-  main -> engine.best_move(eng, board, engine_cfg)      -> chess.Move
+  main -> engine.best_move(stockfish, board, engine_cfg) -> chess.Move
   if move is special (§2.13): main prints it, the human makes it on the board, presses spacebar -> go to verify
   else:
   main -> move_resolver.get_robot_move(board, move)            -> list[op tuple]
@@ -145,10 +145,10 @@ The method compares against an empty-board reference image, so it doesn't rely o
 | | |
 |---|---|
 | `open_engine(engine_cfg: dict) -> chess.engine.SimpleEngine` | Starts the binary at `engine_cfg["path"]` and sets `Skill Level` (0-20). **Raises `FileNotFoundError`** if the binary is missing, and `chess.engine.EngineError` if it fails to start. |
-| `best_move(eng, board: chess.Board, engine_cfg: dict) -> chess.Move` | Thinks for `think_time_s` (time limit only). Does not modify `board`. **Raises `engine.GameOverError`** (subclass of `ValueError`) if `board.is_game_over()` (no draw claims: threefold/50-move do not count). If the engine crashes or fails, its `chess.engine.EngineError` / `EngineTerminatedError` **propagates** (no restart); `main` stops explicitly. |
-| `close_engine(eng) -> None` | Quits the engine. Safe to call twice. |
+| `best_move(stockfish, board: chess.Board, engine_cfg: dict) -> chess.Move` | Thinks for `think_time_s` (time limit only). Does not modify `board`. **Raises `engine.GameOverError`** (subclass of `ValueError`) if `board.is_game_over()` (no draw claims: threefold/50-move do not count). If the engine crashes or fails, its `chess.engine.EngineError` / `EngineTerminatedError` **propagates** (no restart); `main` stops explicitly. |
+| `close_engine(stockfish) -> None` | Quits the engine. Safe to call twice. |
 
-Example: `best_move(eng, chess.Board(), cfg)` might return `Move.from_uci("e2e4")`.
+Example: `best_move(stockfish, chess.Board(), cfg)` might return `Move.from_uci("e2e4")`.
 
 ### chess_logic/move_resolver.py
 | | |
