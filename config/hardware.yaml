@@ -1,7 +1,7 @@
 # Camera and arm connection
 camera:
   device: /dev/v4l/by-id/usb-Xitech_USB_Camera_20250606105-video-index0  # IMX335; stable across reboots (was /dev/video3)
-  width: 2592             # full sensor (4:3, full FOV); MJPG 30 fps. 16:9 modes may crop the FOV (TODO confirm)
+  width: 2592             # full sensor 4:3, full FOV, ~20 fps measured. 1920x1080 is a CROP (cuts top/bottom)
   height: 1944
   fourcc: MJPG
   flush_frames: 3         # stale frames dropped per grab

@@ -82,10 +82,4 @@ Failures must be explicit. Never silently continue on an unverified board.
 - `docs/OPTIONAL_IMPROVEMENTS.md`: deferred ideas; do not implement unless I ask.
 
 ## Build order
-1. `docs/INTERFACES.md` (plan, no code)
-2. `chess_logic/move_resolver.py` + tests, then `engine.py`
-3. `vision/*` on saved images, then live
-4. `control/kinematics.py` + tests
-5. `control/arm.py` MockArm, then `motion.py` against MockArm
-6. Calibration scripts, then real hardware via `tests/hardware/pick_place.py`
-7. `main.py` game loop with verify/retry, first with MockArm, then real
+Follow the 5 milestones in `docs/REMINDERS.md` (chess brain, robot can see, arm in simulation, arm on hardware, full game). Don't start a milestone until the previous one's check passes (2 and 3 can be done in either order).
