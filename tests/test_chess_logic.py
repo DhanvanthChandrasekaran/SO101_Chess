@@ -31,7 +31,7 @@ def test_best_move_start_position(eng):
 @needs_stockfish
 def test_best_move_game_over_raises(eng):
     board = chess.Board("rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3")  # fool's mate
-    with pytest.raises(ValueError):
+    with pytest.raises(engine.GameOverError):
         engine.best_move(eng, board, ENGINE_CFG)
 
 
