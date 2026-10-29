@@ -28,6 +28,8 @@ human turn (after spacebar)
 
 robot turn
   main -> engine.best_move(eng, board, engine_cfg)      -> chess.Move
+  if move is special (§2.13): main prints it, the human makes it on the board, presses spacebar -> go to verify
+  else:
   main -> move_resolver.ops_for(board, move)            -> list[op tuple]
   main -> motion.plan_ops(ops, heights, ctx)            -> list[step tuple]
           motion -> kinematics.square_xy / board_to_base / tool_pitch / ik
@@ -105,6 +107,11 @@ abort (Ctrl-C anywhere)
 Files: `hardware.yaml` (camera, arm port and id), `arm.yaml` (kinematics, tool, motion, gripper, safety), `board.yaml` (board, pieces, off-board spots), `vision.yaml` (warp and occupancy tuning), `game.yaml` (colour, first move, start FEN, Stockfish).
 `ctx` (motion) = `{"arm": arm.yaml dict, "board": board.yaml dict, "acal": arm calib dict}`.
 
+### 2.13 Who moves the robot's pieces
+- The **arm** executes the robot's normal moves: quiet moves and ordinary captures (captured piece to the graveyard, then the move).
+- **Special moves are made physically by the human** when prompted: castling, en passant and promotion. `main` decides with python-chess: `board.is_castling(m) or board.is_en_passant(m) or m.promotion is not None`. It prints the move (SAN and UCI; for promotion, "replace the pawn with a queen"), waits for spacebar, then runs the normal verify step against `expected_occupancy`.
+- `ops_for` still returns full ops for special moves (unchanged contract and tests), so handing them to the arm later only changes `main`. See `docs/OPTIONAL_IMPROVEMENTS.md`.
+
 ## 3. Function contracts
 
 ### vision/camera.py
@@ -161,7 +168,8 @@ Comparing changed squares (`before ^ after`) instead of the whole grid means tha
 - Capture e4xd5: `[("remove", 35), ("move", 28, 35)]`
 - White castling O-O: `[("move", 4, 6), ("move", 7, 5)]` (king first, then rook)
 - En passant e5xd6: `[("remove", 35), ("move", 36, 43)]`
-- Promotion e7e8=Q: `[("move", 52, 60)]`. `main` then asks the human to swap in a queen.
+- Promotion e7e8=Q: `[("move", 52, 60)]`.
+- Castling, en passant and promotion are special moves (§2.13): today `main` has the human make them and does not send these ops to `motion`.
 
 ### control/kinematics.py (config dicts + `lerobot.model.kinematics.RobotKinematics`)
 | | |
@@ -233,5 +241,6 @@ The URDF is an external file, like the lerobot clone, referenced through `arm.ya
 - Occupancy is compared against an empty-board reference photo.
 - Approved: chess_logic contracts (engine, move_resolver).
 - Approved: `engine.GameOverError(ValueError)` crosses the boundary, so `main` can catch game over separately and show the result. Engine failures propagate; restart-once is in OPTIONAL_IMPROVEMENTS.
+- Approved: the robot's special moves (castling, en passant, promotion) are made by the human when prompted; the arm does quiet moves and captures (§2.13). `ops_for` is unchanged.
 - Workspace violations raise in `plan_ops`. `Arm.send` still clamps joints as the last line of defense.
 - Deferred items with reminders are in `docs/REMINDERS.md`.

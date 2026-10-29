@@ -12,6 +12,7 @@ Deterministic, modular. NOT end-to-end learning, NOT a VLA.
 - Board: 30x30 cm total, 26.5x26.5 cm playing area (3.3125 cm squares), fixed to the table. Robot plays white for now, sitting at the rank-1 edge; the human sits opposite. Pieces: wood, 2 cm base diameter, up to 5 cm tall. Pieces and board are similar brown/tan colors, so vision must NOT rely on piece color. Vision answers only "occupied or empty" per square.
 - Parallax: tall pieces shift in the image. Sample a small patch at each square center, in the board-plane-warped image.
 - Opponent: a human. They press a key (spacebar) when their move is done. No auto-detection.
+- Robot's special moves (castling, en passant, promotion) are made physically by the human when prompted; the arm does only quiet moves and normal captures. See `docs/INTERFACES.md` §2.13.
 - Compute: laptop with NVIDIA GPU (not needed for the core pipeline).
 
 ## Architecture and dependency rules
