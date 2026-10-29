@@ -23,7 +23,8 @@ perceive (used after every move, human or robot)
   main -> occupancy.occupancy(scores, vcfg)             -> occ            (8,8) bool
 
 human turn (after spacebar)
-  main -> move_resolver.match_move(board, before, after) -> list[chess.Move]  (0, 1 or many)
+  main -> occupancy.change_scores(top_before, top_after, vcfg) -> change   (8,8) float32
+  main -> move_resolver.match_move(board, before, after, change, margin) -> list[chess.Move]  (0, 1 or many)
 
 robot turn
   main -> engine.best_move(eng, board, engine_cfg)      -> chess.Move
@@ -130,6 +131,7 @@ Example: with `px_per_square = 50`, `warp(und, bcal).shape == (400, 400, 3)`, an
 |---|---|
 | `square_scores(top: np.ndarray, empty_top: np.ndarray, vision_cfg: dict) -> np.ndarray` | Compares a centered patch (`patch_frac` of the square side) of each square in `top` against the same patch of the empty-board reference `empty_top` (same shape). Returns `(8,8) float32`, ≥ 0, layout §2.3. **Raises `ValueError`** on shape mismatch. |
 | `occupancy(scores: np.ndarray, vision_cfg: dict) -> np.ndarray` | Returns `scores > vision_cfg["threshold"]` as `(8,8) bool`. |
+| `change_scores(top_before: np.ndarray, top_after: np.ndarray, vision_cfg: dict) -> np.ndarray` | Compares the same centered patch of each square between two top-down images of the same game. Returns `(8,8) float32`, ≥ 0, layout §2.3; higher means the square looks more different. This is used to resolve ambiguous captures, where the target square stays occupied but the piece swaps colour. It never labels a colour. **Raises `ValueError`** on shape mismatch. |
 
 Example: for the start position, `occupancy(...)` has rows 0, 1, 6 and 7 all True.
 The method compares against an empty-board reference image, so it doesn't rely on piece colour. The scoring internals are an implementation detail.
@@ -147,10 +149,12 @@ Example: `best_move(eng, chess.Board(), cfg)` might return `Move.from_uci("e2e4"
 | | |
 |---|---|
 | `expected_occupancy(board: chess.Board) -> np.ndarray` | `(8,8) bool`: True where python-chess has a piece. Never fails. |
-| `match_move(board: chess.Board, before: np.ndarray, after: np.ndarray) -> list[chess.Move]` | Finds the human's move. `board` is the position before the move (unchanged). `before` and `after` are perceived `(8,8) bool`. Returns every legal move `m` for which the squares changed by `m` (from `expected_occupancy`) equal `before ^ after`. Promotions to the same square are merged into the **queen** promotion. **Never raises.** `[]` means no match, 1 element means resolved, and more than one means ambiguous; `main` then asks the human to type the move in UCI. |
+| `match_move(board: chess.Board, before: np.ndarray, after: np.ndarray, change: np.ndarray \| None = None, margin: float = 0.0) -> list[chess.Move]` | Finds the human's move. `board` is the position before the move (unchanged). `before` and `after` are perceived `(8,8) bool`. Step 1: collect every legal move `m` for which the squares changed by `m` (from `expected_occupancy`) equal `before ^ after`. Promotions to the same square are merged into the **queen** promotion. Step 2, only if more than one candidate remains and `change` (`(8,8) float32` from `occupancy.change_scores`) is given: score each candidate by `change` at its `to_square`, and return just the best one if it beats the runner-up by more than `margin` (`config/vision.yaml: ambiguity_margin`, passed in by `main`). **Never raises.** `[]` means no match, 1 element means resolved, and more than one means still ambiguous; `main` then asks the human to type the move in UCI. |
 | `ops_for(board: chess.Board, move: chess.Move) -> list[tuple]` | `board` is the position **before** `move` (unchanged). Returns ops (§2.11), with removals first. **Raises `ValueError`** if `move` is illegal. |
 
 Comparing changed squares (`before ^ after`) instead of the whole grid means that a square vision consistently misreads doesn't break matching.
+
+`match_move` example: with a white queen on d1 that can take on d7 or g4, occupancy shows only that d1 emptied, so both moves are candidates. With `change[g4] = 40.0`, `change[d7] = 2.0` and `margin = 10.0`, it returns `[Move.from_uci("d1g4")]`. With no `change`, it returns both.
 
 `ops_for` examples:
 - Quiet move e2e4: `[("move", 12, 28)]`
@@ -225,7 +229,7 @@ The URDF is an external file, like the lerobot clone, referenced through `arm.ya
 - Approved: variable tool pitch (§2.9). CLAUDE.md is updated.
 - Approved: configs split into `vision.yaml` and `game.yaml`.
 - Approved: lerobot `RobotKinematics` for IK/FK, custom IK deferred. This needs `placo` (pending your install decision).
-- `match_move` returns a list (ambiguous slider captures). Explained, to be handled while building `move_resolver` and `main`.
+- `match_move` returns a list (ambiguous slider captures). Approved: ambiguous captures are resolved by `occupancy.change_scores` (the target square's before/after appearance), falling back to the human typing the move.
 - Occupancy is compared against an empty-board reference photo.
 - Workspace violations raise in `plan_ops`. `Arm.send` still clamps joints as the last line of defense.
 - Deferred items with reminders are in `docs/REMINDERS.md`.
