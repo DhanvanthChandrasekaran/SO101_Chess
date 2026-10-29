@@ -1,6 +1,12 @@
-# square size, piece heights, graveyard spot (all lengths in meters)
-square_size_m: 0.035      # MEASURE THIS
-piece_height_m:           # MEASURE THESE
-  pawn: 0.030
-  king: 0.050
-graveyard_xy_m: [0.0, 0.0]   # TODO: pick a spot in reach, beside the board
+# Board, pieces, off-board spots (all lengths in meters, board frame: docs/INTERFACES.md §2.6)
+square_size_m: 0.033125   # 26.5 cm playing area / 8
+piece_height_m:           # MEASURE THESE (pawn, king measured)
+  pawn: 0.028
+  knight: null            # TODO
+  bishop: null            # TODO
+  rook: null              # TODO
+  queen: null             # TODO
+  king: 0.049
+graveyard_xy_m:           # list of slots; only slot 0 used for now
+  - [null, null]          # TODO pick a spot in reach, beside the board
+

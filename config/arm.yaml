@@ -1,5 +1,48 @@
-# tool pitch, hover heights, speeds, grip widths
-tool_pitch_deg: 65        # fixed for all squares; tune on bench
-hover_height_m: 0.07
-grip_height_frac: 0.7     # fraction of piece height to grip at
-max_speed_scale: 0.3      # keep low until tuned
+# Arm geometry, tool pose, motion and safety. Lengths m, angles deg (see docs/INTERFACES.md §2.7-2.9).
+
+# Kinematics: lerobot RobotKinematics (placo) on the SO101 URDF
+urdf_path: null            # TODO path to SO-ARM100/Simulation/SO101/so101_new_calib.urdf
+target_frame: gripper_frame_link
+tcp_offset_m: [0.0, 0.0, 0.0]  # TODO target_frame -> TCP (end/middle of open stock jaws), in target_frame axes
+ik_orientation_weight: 0.1 # TODO tune; position weight is 1.0
+ik_max_iters: 50
+ik_pos_tol_m: 0.002        # FK check after IK; worse -> unreachable
+ik_pitch_tol_deg: 3.0
+joint_limits_deg:          # TODO: read from teleop; arm.send clamps, ik rejects
+  shoulder_pan: [null, null]
+  shoulder_lift: [null, null]
+  elbow_flex: [null, null]
+  wrist_flex: [null, null]
+  wrist_roll: [null, null]
+
+# Tool pose: pitch from horizontal (+ = down), linear in horizontal reach
+pitch_near_deg: null       # TODO tune on bench (near base: ~steep)
+pitch_far_deg: null        # TODO tune on bench (far edge: shallower)
+reach_near_m: null         # TODO
+reach_far_m: null          # TODO
+wrist_roll_deg: null       # TODO fixed roll so jaws open sideways
+
+# Heights above board surface (TCP z)
+hover_height_m: 0.07       # above the piece top before descending
+travel_height_m: null      # TODO must clear a king while carrying a king (> ~0.09)
+grip_height_frac: 0.7      # fraction of piece height to grip at
+place_drop_m: 0.003        # release this far above contact
+min_z_m: 0.005             # never command TCP lower than this
+workspace_margin_m: 0.02   # allowed beyond the playing area edge
+
+# Gripper (lerobot 0-100). Close past the piece; torque limit sets squeeze force.
+gripper_open: null         # TODO
+gripper_close: null        # TODO (fully closed is fine)
+gripper_torque: 300        # TODO Max_Torque_Limit 0-1000 (lerobot default 500)
+gripper_wait_s: 0.4
+
+# Speed
+max_speed_scale: 0.3       # keep low until tuned
+max_joint_speed_deg_s: null  # TODO
+control_hz: 50
+settle_tol_deg: 2.0
+step_timeout_s: 5.0
+
+# Used ONLY with --mock when calibration/data/ is missing
+nominal:
+  board_origin_base_m: [null, null, 0.0]  # TODO a1 outer corner in base frame (~5 cm gap + border)

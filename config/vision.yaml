@@ -1,0 +1,4 @@
+# Board warp and occupancy tuning
+px_per_square: 50         # top-down image is 8*this px square
+patch_frac: 0.4           # sampled patch side / square side
+threshold: null           # TODO tune on saved images

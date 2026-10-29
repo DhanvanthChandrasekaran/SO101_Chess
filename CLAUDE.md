@@ -7,9 +7,9 @@ Deterministic, modular. NOT end-to-end learning, NOT a VLA.
 
 ## Hardware and physical facts (treat as constraints)
 - Arm: SO101 follower (5 DOF + gripper), clamped to the table. Leader arm is used only for teleop calibration.
-- Gripper: stock jaws (slim 3D-printed tips coming), opening is **sideways** when angled. The tool is held at a **fixed tilted pitch** (not straight down) for every square. Do not solve for tool pitch; it is a config constant.
+- Gripper: stock jaws, opening is **sideways** when angled. TCP = end/middle of the open jaws. Tool pitch (from horizontal) **varies with reach**: steep near the base, shallower at the far edge. It follows a linear schedule in reach set in `config/arm.yaml` (`pitch_near_deg`/`pitch_far_deg`). Do not solve for tool pitch; read it from config.
 - Camera: IMX335, USB, ~106 deg diagonal FOV (heavy barrel distortion, undistort first), mounted overhead ~60 cm above board center, exposure/white balance locked.
-- Board: 30x30 cm total, ~3.5 cm squares, fixed to the table. Pieces: wood, 2 cm base diameter, up to 5 cm tall. Pieces and board are similar brown/tan colors, so vision must NOT rely on piece color. Vision answers only "occupied or empty" per square.
+- Board: 30x30 cm total, 26.5x26.5 cm playing area (3.3125 cm squares), fixed to the table. Robot plays white for now, sitting at the rank-1 edge; the human sits opposite. Pieces: wood, 2 cm base diameter, up to 5 cm tall. Pieces and board are similar brown/tan colors, so vision must NOT rely on piece color. Vision answers only "occupied or empty" per square.
 - Parallax: tall pieces shift in the image. Sample a small patch at each square center, in the board-plane-warped image.
 - Opponent: a human. They press a key (spacebar) when their move is done. No auto-detection.
 - Compute: laptop with NVIDIA GPU (not needed for the core pipeline).
@@ -24,7 +24,7 @@ Only `main.py` wires modules together. Modules must not import each other except
 | `vision/occupancy.py` | top-down board -> 8x8 bool grid | board_view output type |
 | `chess_logic/engine.py` | Stockfish wrapper: board -> best move | python-chess only |
 | `chess_logic/move_resolver.py` | `match_move` (occupancy before/after -> human's legal move), `ops_for` (move -> list of move/remove ops: captures, castling, en passant) | python-chess, numpy only |
-| `control/kinematics.py` | square/xyz -> joint angles, pure math | config only |
+| `control/kinematics.py` | square/xyz -> joint angles via lerobot `RobotKinematics` (placo + SO101 URDF) | config, `lerobot.model.kinematics` |
 | `control/motion.py` | ops -> waypoints/trajectory -> arm calls | kinematics, arm |
 | `control/arm.py` | hardware driver + `MockArm` | lerobot |
 | `calibration/*` | one-off scripts that write to `calibration/data/` | anything they need |
@@ -71,10 +71,15 @@ Failures must be explicit. Never silently continue on an unverified board.
 ## Commands
 - Env: `conda activate lerobot` (always, before anything else)
 - Install (once): `pip install -r requirements.txt`, which only adds python-chess and pytest. Stockfish is installed separately. This is an app run from the repo root, not an installable package: do not add a `[project]` table, `setup.py`, or `pip install -e .`.
-- Tests: `pytest`
+- Tests: `PYTHONPATH= pytest` (until ROS PYTHONPATH is fixed, see `docs/REMINDERS.md`)
 - Play: `python main.py` (add `--mock` to use `MockArm`)
 - Debug vision: `python tools/vision_live.py`
 - Hardware pick/place test (moves the arm!): `python tests/hardware/pick_place.py e2 e4`
+
+## Docs
+- `docs/INTERFACES.md`: the contract.
+- `docs/REMINDERS.md`: open questions and reminders per subsystem. **Read the relevant section before starting a subsystem and raise its items with me.**
+- `docs/OPTIONAL_IMPROVEMENTS.md`: deferred ideas; do not implement unless I ask.
 
 ## Build order
 1. `docs/INTERFACES.md` (plan, no code)

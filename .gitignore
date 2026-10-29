@@ -4,3 +4,4 @@ __pycache__/
 data/images/
 data/logs/
 .pytest_cache/
+data/test_images/

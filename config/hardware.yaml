@@ -1,7 +1,12 @@
-# camera index, serial port, motor IDs
+# Camera and arm connection
 camera:
-  index: 0
-  width: 1920
-  height: 1080
+  device: /dev/v4l/by-id/usb-Xitech_USB_Camera_20250606105-video-index0  # IMX335; stable across reboots (was /dev/video3)
+  width: 2592             # full sensor (4:3, full FOV); MJPG 30 fps. 16:9 modes may crop the FOV (TODO confirm)
+  height: 1944
+  fourcc: MJPG
+  flush_frames: 3         # stale frames dropped per grab
+  exposure: null          # TODO locked value (exposure_time_absolute, 50-10000, after auto_exposure=1 manual)
+  white_balance: null     # TODO locked value (white_balance_temperature 2800-6500, after white_balance_automatic=0)
 arm:
-  port: /dev/ttyACM0   # follower
+  port: /dev/ttyACM0      # follower
+  id: HAM_follower_001    # lerobot calibration id
