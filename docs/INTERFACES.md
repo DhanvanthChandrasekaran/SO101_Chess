@@ -140,7 +140,7 @@ The method compares against an empty-board reference image, so it doesn't rely o
 | | |
 |---|---|
 | `open_engine(engine_cfg: dict) -> chess.engine.SimpleEngine` | Starts the binary at `engine_cfg["path"]` and sets `Skill Level` (0-20). **Raises `FileNotFoundError`** if the binary is missing, and `chess.engine.EngineError` if it fails to start. |
-| `best_move(eng, board: chess.Board, engine_cfg: dict) -> chess.Move` | Thinks for `think_time_s`. Does not modify `board`. **Raises `ValueError`** if the game is over. |
+| `best_move(eng, board: chess.Board, engine_cfg: dict) -> chess.Move` | Thinks for `think_time_s` (time limit only). Does not modify `board`. **Raises `ValueError`** if `board.is_game_over()` (no draw claims: threefold/50-move do not count). If the engine crashes or fails, its `chess.engine.EngineError` / `EngineTerminatedError` **propagates** (no restart); `main` stops explicitly. |
 | `close_engine(eng) -> None` | Quits the engine. Safe to call twice. |
 
 Example: `best_move(eng, chess.Board(), cfg)` might return `Move.from_uci("e2e4")`.
@@ -231,5 +231,6 @@ The URDF is an external file, like the lerobot clone, referenced through `arm.ya
 - Approved: lerobot `RobotKinematics` for IK/FK, custom IK deferred. This needs `placo` (pending your install decision).
 - `match_move` returns a list (ambiguous slider captures). Approved: ambiguous captures are resolved by `occupancy.change_scores` (the target square's before/after appearance), falling back to the human typing the move.
 - Occupancy is compared against an empty-board reference photo.
+- Approved: chess_logic contracts (engine, move_resolver). Engine failures propagate; restart-once is in OPTIONAL_IMPROVEMENTS.
 - Workspace violations raise in `plan_ops`. `Arm.send` still clamps joints as the last line of defense.
 - Deferred items with reminders are in `docs/REMINDERS.md`.

@@ -13,6 +13,9 @@ Each entry lists where the extension hooks in, so it can be added without changi
 ## Captures
 - **Multiple graveyard slots.** `graveyard_xy_m` is already a list. `motion.plan_ops` would take a slot index (or a capture count) to fill the slots in order.
 
+## Engine
+- **Restart Stockfish once on a crash.** Today `best_move` lets `EngineError`/`EngineTerminatedError` propagate and `main` stops. `main` could instead catch it, `close_engine` + `open_engine` again, and retry `best_move` once. Done in `main`, this needs no signature change.
+
 ## Kinematics
 - **Custom analytic IK.** Replace lerobot `RobotKinematics` (placo, iterative) with a closed-form 5-DOF solver: pan = atan2(y, x), then 2-link planar IK with the wrist set by the pitch. It needs no placo and is exact and fast. Link lengths come from the URDF. Keep the same `ik`/`fk` signatures, so only `kinematics.py` changes.
 
