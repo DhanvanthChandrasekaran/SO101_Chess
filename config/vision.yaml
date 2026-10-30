@@ -7,7 +7,7 @@ threshold: null           # TODO tune on saved images
 lens_model: fisheye       # 106 deg diagonal FOV; pinhole is the fallback
 checkerboard:
   inner_corners: [9, 6]        # [columns, rows] of inner corners; --make-checkerboard draws this size
-  square_mm: null              # TODO measured with a ruler on the screen showing the checkerboard
+  square_mm: 21.428
   capture:                     # camera_intrinsics.py --capture (starting values; tune if it saves too often or never)
     still_px: 10               # board corners may move at most this much between frames to count as "held still" (full-size px). Bigger = saves sooner, more blur risk
     min_change_frac: 0.03      # new spot if the board corners are this far from every saved photo's (fraction of the image diagonal, ~100 px). Smaller = saves more often
