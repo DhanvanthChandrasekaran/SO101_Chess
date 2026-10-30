@@ -87,6 +87,7 @@ Failures must be explicit. Never silently continue on an unverified board.
 - Tests: `PYTHONPATH= pytest` (until ROS PYTHONPATH is fixed, see `docs/REMINDERS.md`)
 - Play: `python main.py` (add `--mock` to use `MockArm`)
 - Debug vision: `python tools/vision_live.py`
+- Live move-recognition test (camera, no arm): `python tools/watch_moves.py data/images/states/play`
 - Camera exposure/white balance (needs the camera): `python calibration/camera_exposure.py`
 - Hardware pick/place test (moves the arm!): `python tests/hardware/pick_place.py e2 e4`
 
