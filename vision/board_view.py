@@ -1,5 +1,7 @@
 """Turns a camera photo into a flat, straight-down picture of just the chess board."""
+import cv2
 import numpy as np
+import yaml
 
 
 def load_board_calibration(path: str) -> dict:
@@ -7,9 +9,17 @@ def load_board_calibration(path: str) -> dict:
 
     Raises FileNotFoundError if the file is missing.
     """
-    raise NotImplementedError
+    with open(path) as f:
+        saved = yaml.safe_load(f)
+    return {
+        "photo_to_top_down": np.array(saved["photo_to_top_down"], dtype=np.float64),
+        "pixels_per_square": int(saved["pixels_per_square"]),
+        "corner_pixels": np.array(saved["corner_pixels"], dtype=np.float64),
+    }
 
 
 def top_down_view(photo: np.ndarray, board_calibration: dict) -> np.ndarray:
     """Return a square picture of only the playing area, seen from straight above, with a1 at the bottom-left."""
-    raise NotImplementedError
+    side_px = 8 * board_calibration["pixels_per_square"]
+    return cv2.warpPerspective(photo, board_calibration["photo_to_top_down"], (side_px, side_px),
+                               flags=cv2.INTER_LINEAR)

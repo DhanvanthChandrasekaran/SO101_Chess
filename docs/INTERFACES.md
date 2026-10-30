@@ -136,7 +136,7 @@ Example: with `pixels_per_square = 50`, `top_down_view(straight_photo, board_cal
 | | |
 |---|---|
 | `square_difference_scores(top_down: np.ndarray, empty_board_top_down: np.ndarray, vision_settings: dict) -> np.ndarray` | Compares a centered patch (`patch_frac` of the square side) of each square in `top_down` against the same patch of the empty-board reference (same shape). Returns `(8,8) float32`, ≥ 0, layout §2.3. **Raises `ValueError`** on shape mismatch. |
-| `occupied_squares(difference_scores: np.ndarray, vision_settings: dict) -> np.ndarray` | Returns `difference_scores > vision_settings["threshold"]` as `(8,8) bool`. |
+| `occupied_squares(difference_scores: np.ndarray, vision_settings: dict) -> np.ndarray` | Returns `difference_scores > vision_settings["threshold"]` as `(8,8) bool`. **Raises `ValueError`** while `threshold` is still null in config. |
 
 Example: for the start position, `occupied_squares(...)` has rows 0, 1, 6 and 7 all True.
 The method compares against an empty-board reference image, so it doesn't rely on piece colour. The scoring internals are an implementation detail.
@@ -236,7 +236,7 @@ The URDF is an external file, like the lerobot clone, referenced through `arm.ya
 ## 5. How to test each boundary
 | Boundary | Check |
 |---|---|
-| `camera.take_photo/undistort` | `tools/vision_live.py --save` writes the undistorted frame: straight board edges should look straight. |
+| `camera.take_photo/undistort` | `tools/vision_live.py --save DIR` writes the undistorted frame: straight board edges should look straight. |
 | `board_view.top_down_view` | `tools/vision_live.py` draws the 8x8 grid on the top-down image: grid lines should fall on the square edges, with a1 at the bottom-left. |
 | `occupancy.*` | `tools/vision_live.py --images data/images/` shows a score heatmap and occupancy for saved start/mid-game photos. Visual check. The first samples are `data/test_images/` (hand-held, 1280x720, start position, white at the bottom, **mirrored left to right**, no empty-board photo). |
 | `engine.*` | pytest smoke test (skipped if the binary is missing): `best_move` on the start position returns a legal move. |
@@ -244,6 +244,8 @@ The URDF is an external file, like the lerobot clone, referenced through `arm.ya
 | `kinematics.*` | `tests/test_kinematics.py`: `joint_angles_for` → `gripper_position_for` round-trip on all 64 squares and the graveyard, `square_center_on_board` corners, `None` for unreachable targets. Skipped (`pytest.importorskip("placo")`) if placo or the URDF is missing. |
 | `arm` / `motion` | `python main.py --mock` logs the steps; `tests/hardware/pick_place.py e2 e4 --mock` prints the joint trajectory. Real arm only by hand. |
 | `main` | `python main.py --mock --images data/images/game1/` replays a recorded game. |
+
+`tools/vision_live.py` options: no `--images` = live camera (refreshes until the window is closed); `--images DIR` = each saved photo in turn; `--calibration-folder DIR` (default `calibration/data/`; reads `camera_intrinsics.yaml`, `board.yaml`, `empty_board.png`); `--no-lens` (skip undistorting, to pair with `board_corners.py --no-lens`); `--save DIR` (with `--images`: write `<name>_straight.jpg` and `<name>_view.png` to DIR instead of opening a window; live: pressing `s` saves the raw photo to DIR, which is also how the checkerboard and board photos are taken). `board.yaml` is optional, so `--no-lens --save DIR` works before any calibration. It shows three panels: the straightened photo with the board outline, the top-down view with the 8x8 grid and occupied squares marked, and the 8x8 score heatmap (rank 8 on top). Without `empty_board.png` it shows only the first two; with a null `threshold` it shows scores but no occupancy.
 
 ## 6. Decisions log
 - Approved: `Arm` and `MockArm` are custom classes crossing a boundary.
