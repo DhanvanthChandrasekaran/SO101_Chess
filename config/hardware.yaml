@@ -5,8 +5,8 @@ camera:
   height: 1944
   fourcc: MJPG
   flush_frames: 3         # stale frames dropped per grab
-  exposure: null          # TODO locked value (exposure_time_absolute, 50-10000, after auto_exposure=1 manual)
-  white_balance: null     # TODO locked value (white_balance_temperature 2800-6500, after white_balance_automatic=0)
+  exposure: 1660  # set by calibration/camera_exposure.py
+  white_balance: 4610  # set by calibration/camera_exposure.py
 arm:
   port: /dev/ttyACM0      # follower
   id: HAM_follower_001    # lerobot calibration id
