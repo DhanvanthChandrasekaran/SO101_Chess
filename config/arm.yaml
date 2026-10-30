@@ -1,7 +1,7 @@
 # Arm geometry, tool pose, motion and safety. Lengths m, angles deg (see docs/INTERFACES.md §2.7-2.9).
 
 # Kinematics: lerobot RobotKinematics (placo) on the SO101 URDF
-urdf_path: null            # TODO path to SO-ARM100/Simulation/SO101/so101_new_calib.urdf
+urdf_path: control/urdf/so101_new_calib.urdf  # copy of SO-ARM100 Simulation/SO101 (commit a758567), relative to the repo root
 target_frame: gripper_frame_link
 tcp_offset_m: [0.0, 0.0, 0.0]  # TODO target_frame -> TCP (end/middle of open stock jaws), in target_frame axes
 ik_orientation_weight: 0.1 # TODO tune; position weight is 1.0
