@@ -31,7 +31,7 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 
 ## calibration/camera_intrinsics.py
 - [ ] Checkerboard shown on a screen (no printer): `python calibration/camera_intrinsics.py --make-checkerboard checkerboard.png --screen-px W H`, opened full screen at 100% zoom. Measure across all squares with a ruler, divide by the number of squares, and set `vision.yaml: checkerboard.square_mm` (TODO). Prefer the laptop (bigger board in the photo). Turn brightness up and tilt to avoid glare; don't let the screen sleep. Lens model: fisheye (decided).
-- [x] Taking the checkerboard photos: `python tools/vision_live.py --no-lens --save data/images/checkerboard/`, press `s` for each (raw photos, as the lens calibration needs).
+- [x] Taking the checkerboard photos: `python calibration/camera_intrinsics.py --capture data/images/checkerboard/` (automatic). Pressing `s` in `tools/vision_live.py --no-lens --save DIR` also works.
 
 ## calibration/board_corners.py and vision/board_view.py
 - [ ] Click order is a1, h1, h8, a8 (outer corners of the playing area), so image orientation doesn't matter. The user assumed a1 is at the bottom-left of the camera image; this is only for sanity-checking the clicks.

@@ -8,3 +8,7 @@ lens_model: fisheye       # 106 deg diagonal FOV; pinhole is the fallback
 checkerboard:
   inner_corners: [9, 6]        # [columns, rows] of inner corners; --make-checkerboard draws this size
   square_mm: null              # TODO measured with a ruler on the screen showing the checkerboard
+  capture:                     # camera_intrinsics.py --capture (starting values; tune if it saves too often or never)
+    still_px: 3                # board corners may move at most this much between frames to count as "held still" (full-size px)
+    min_change_frac: 0.05      # a new photo's board corners must be this far from every saved photo's (fraction of image diagonal)
+    target_photos: 25          # stop after this many
