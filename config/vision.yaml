@@ -1,7 +1,7 @@
 # Board warp and occupancy tuning
 px_per_square: 50         # top-down image is 8*this px square
 patch_frac: 0.4           # sampled patch side / square side
-threshold: null           # TODO tune on saved images
+threshold: 34.3  # set with the tools/vision_live.py slider
 
 # Lens calibration (calibration/camera_intrinsics.py)
 lens_model: fisheye       # 106 deg diagonal FOV; pinhole is the fallback

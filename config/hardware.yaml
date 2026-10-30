@@ -5,7 +5,7 @@ camera:
   height: 1944
   fourcc: MJPG
   flush_frames: 3         # stale frames dropped per grab
-  exposure: 1660  # set by calibration/camera_exposure.py
+  exposure: 1080  # set by calibration/camera_exposure.py
   white_balance: 4610  # set by calibration/camera_exposure.py
 arm:
   port: /dev/ttyACM0      # follower
