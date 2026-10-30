@@ -230,10 +230,10 @@ def check(folder: str, calibration_folder: str, vision_settings: dict) -> int:
     if "moves" in labels and seen_per_photo:
         board = chess.Board(labels["start_fen"])
         found = 0
-        for move_index, uci in enumerate(labels["moves"]):
+        photographed_moves = labels["moves"][:len(seen_per_photo) - 1]  # a stopped game has fewer photos than moves
+        for move_index, uci in enumerate(photographed_moves):
             move = chess.Move.from_uci(uci)
-            candidates = find_human_move(board, seen_per_photo[move_index], seen_per_photo[move_index + 1]) \
-                if move_index + 1 < len(seen_per_photo) else []
+            candidates = find_human_move(board, seen_per_photo[move_index], seen_per_photo[move_index + 1])
             if move in candidates:
                 found += 1
                 if len(candidates) > 1:
@@ -241,7 +241,9 @@ def check(folder: str, calibration_folder: str, vision_settings: dict) -> int:
             else:
                 print(f"move {move_index + 1} {uci}: NOT found (vision gave {[m.uci() for m in candidates]})")
             board.push(move)
-        print(f"game: {found}/{len(labels['moves'])} moves recovered by find_human_move")
+        print(f"game: {found}/{len(photographed_moves)} photographed moves recovered by find_human_move"
+              + (f" ({len(labels['moves']) - len(photographed_moves)} planned moves not photographed)"
+                 if len(photographed_moves) < len(labels["moves"]) else ""))
     return mistakes
 
 
