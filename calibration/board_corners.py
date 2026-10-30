@@ -1,7 +1,9 @@
 """You click the four board corners (a1, h1, h8, a8) on a photo of the empty board; saves board.yaml and empty_board.png.
 
 Usage: python calibration/board_corners.py [--photo RAW_PHOTO] [--lens LENS_YAML] [--no-lens]
-       [--corners U V U V U V U V] [--output-folder DIR]
+       [--corners U V U V U V U V | --keep-corners] [--output-folder DIR]
+After changing exposure, white balance or lighting (board and camera not moved): --keep-corners retakes only
+the empty-board photo, using the corners already saved.
 Click the OUTER corners of the 8x8 playing area (not the wooden border). Ignore the printed letters:
 a1 is the dark corner square nearest the robot, on the robot's left.
 """
@@ -61,8 +63,12 @@ def main(command_line_args: list[str] | None = None) -> int:
     parser.add_argument("--no-lens", action="store_true", help="use the photo as it is (trial only)")
     parser.add_argument("--corners", type=float, nargs=8, metavar="U_V",
                         help="a1, h1, h8, a8 positions in the straightened photo, instead of clicking")
+    parser.add_argument("--keep-corners", action="store_true",
+                        help="reuse the corners in the existing board.yaml; only retake the empty-board photo")
     parser.add_argument("--output-folder", default="calibration/data")
     args = parser.parse_args(command_line_args)
+    if args.keep_corners and args.corners:
+        parser.error("use either --keep-corners or --corners, not both")
     # A calibration made on a bent photo would not fit the straightened photos the game uses.
     if args.no_lens and os.path.realpath(args.output_folder) == os.path.realpath("calibration/data"):
         parser.error("--no-lens results must not go to calibration/data; pass --output-folder (e.g. data/images/trial)")
@@ -83,6 +89,12 @@ def main(command_line_args: list[str] | None = None) -> int:
 
     if args.corners:
         corner_pixels = np.array(args.corners, dtype=np.float64).reshape(4, 2)
+    elif args.keep_corners:
+        # Only the light or exposure changed, not where the board sits, so the old clicks are still right.
+        existing_board_path = os.path.join(args.output_folder, "board.yaml")
+        if not os.path.exists(existing_board_path):
+            parser.error(f"{existing_board_path} is missing: run once without --keep-corners to click the corners")
+        corner_pixels = board_view.load_board_calibration(existing_board_path)["corner_pixels"]
     else:
         corner_pixels = click_corners(straight_photo)
         if corner_pixels is None:

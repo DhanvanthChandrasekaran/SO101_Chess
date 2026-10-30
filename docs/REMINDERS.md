@@ -36,6 +36,7 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 ## calibration/board_corners.py and vision/board_view.py
 - [ ] Click order is a1, h1, h8, a8 (outer corners of the playing area), so image orientation doesn't matter. The user assumed a1 is at the bottom-left of the camera image; this is only for sanity-checking the clicks.
 - [ ] The **empty-board reference photo** (user is getting these): same camera pose, light and exposure as play, and the arm parked out of view.
+- **Retake the empty-board reference after any exposure, white balance or lighting change** (`python calibration/board_corners.py --keep-corners`), then find the threshold again with the slider. If the board or camera moved, run it without `--keep-corners` and click again.
 - [x] The test images are mirrored left to right (printed letters read backwards; checked 2026-10-29). Flip them before using them as ground truth. In `data/test_images/` the a-h letters read normally along the bottom with white at the bottom, but double-check before using them as ground truth.
 
 ## vision/occupancy.py
