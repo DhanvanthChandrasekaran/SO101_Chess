@@ -108,7 +108,7 @@ Files: `hardware.yaml` (camera, arm port and id), `arm.yaml` (kinematics, tool, 
 
 ### 2.13 Who moves the robot's pieces
 - The **arm** executes the robot's normal moves: quiet moves and ordinary captures (captured piece to the graveyard, then the move).
-- **Special moves are made physically by the human** when prompted: castling, en passant and promotion. `main` decides with python-chess: `board.is_castling(m) or board.is_en_passant(m) or m.promotion is not None`. It prints the move (SAN and UCI; for promotion, "replace the pawn with a queen"), waits for spacebar, then runs the normal verify step against `expected_board_state`.
+- **Special moves are made physically by the human** when prompted: castling, en passant and promotion. `main` decides with python-chess: `board.is_castling(m) or board.is_en_passant(m) or m.promotion is not None`. It prints the move (SAN and UCI; for promotion, "replace the pawn with a queen", adding "a captured queen, or any stand-in piece if none is off the board", since there is only one set), waits for spacebar, then runs the normal verify step against `expected_board_state`.
 - `get_robot_move` still returns full steps for special moves (unchanged contract and tests), so handing them to the arm later only changes `main`. See `docs/OPTIONAL_IMPROVEMENTS.md`.
 
 ## 3. Function contracts

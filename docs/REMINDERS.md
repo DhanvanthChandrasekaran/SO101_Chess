@@ -21,7 +21,7 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 
 ## chess_logic/move_resolver.py and main.py (milestones 1 and 5)
 - [x] **Ambiguous human captures (decided).** When the human captures, occupancy only shows the from-square emptying, so a queen that could take on two squares looks the same either way. `find_human_move` returns every candidate and `main` shows the friendly ambiguity prompt (INTERFACES.md, main.py section). Milestone 1 test: an ambiguous slider capture returns all candidates. Auto-resolving by change scores is removed (OPTIONAL_IMPROVEMENTS.md).
-- [x] Human promotion is assumed to be a queen (vision can't tell). The robot's special moves (castling, en passant, promotion) are made by the human when prompted (INTERFACES §2.13).
+- [x] Human promotion is assumed to be a queen (vision can't tell). Only one set exists (one queen per colour): a promotion uses a captured queen or any stand-in piece; vision only sees occupancy, so either works. The robot's special moves (castling, en passant, promotion) are made by the human when prompted (INTERFACES §2.13).
 
 ## vision/camera.py (milestone 2)
 - [x] Device found: `/dev/v4l/by-id/usb-Xitech_USB_Camera_20250606105-video-index0`. MJPG modes up to 2592x1944 at 30 fps; YUYV is slow at high resolution.

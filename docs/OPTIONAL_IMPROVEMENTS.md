@@ -10,7 +10,7 @@ Each entry lists where the extension hooks in, so it can be added without changi
 - **Arm castles and takes en passant.** `get_robot_move` already returns the steps (king then rook; remove the passed pawn, then move). Only `main` changes: stop sending these moves to the human and pass their steps to `motion`. Validate on hardware first (two-piece moves need clear travel paths).
 
 ## Promotion
-- **Robot promotes with a real queen.** Add a reserve spot (`reserve_xy_m` in board.yaml, board frame) and a new step `("place_from", reserve_slot, square)`. That changes the steps contract, so update INTERFACES.md first. For now, the human makes the whole promotion move.
+- **Robot promotes with a real queen.** Add a reserve spot (`reserve_xy_m` in board.yaml, board frame) and a new step `("place_from", reserve_slot, square)`. That changes the steps contract, so update INTERFACES.md first. For now, the human makes the whole promotion move. There is only one set, so the reserve would hold a captured queen or a stand-in piece.
 - **Human under-promotion.** Today `find_human_move` assumes a queen. `main` could ask on the keyboard when a pawn reaches the last rank.
 
 ## Captures

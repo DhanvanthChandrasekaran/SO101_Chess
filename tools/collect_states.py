@@ -68,7 +68,7 @@ def describe_move(board: chess.Board, move: chess.Move) -> str:
     elif board.is_capture(move):
         text += f" (remove the {chess.piece_name(board.piece_type_at(move.to_square))} on {end} first)"
     if move.promotion:
-        text += ", then replace the pawn with a queen"
+        text += ", then replace the pawn with a queen (a captured one, or any stand-in piece: there is only one set)"
     return text
 
 
