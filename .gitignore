@@ -5,7 +5,6 @@ data/images/
 data/logs/
 .pytest_cache/
 data/test_images/
-data/synthetic/
 
 # Local agent tooling (not part of the project)
 .claude/

@@ -2,6 +2,8 @@
 
 Usage: python calibration/camera_intrinsics.py --images FOLDER [--inner-corners COLS ROWS] [--square-mm MM]
        [--output-folder DIR]. The checkerboard size and lens model default to config/vision.yaml.
+No printer? python calibration/camera_intrinsics.py --make-checkerboard OUT.png --screen-px WIDTH HEIGHT
+       writes a checkerboard picture to show full screen on a laptop or phone.
 """
 import argparse
 import glob
@@ -13,6 +15,25 @@ import yaml
 
 # Fewer photos than this rarely pins down a fisheye lens; take more from different angles and image corners.
 MINIMUM_PHOTOS = 10
+
+
+def make_checkerboard_picture(inner_corners: tuple[int, int], screen_width: int, screen_height: int) -> np.ndarray:
+    """Return a black-and-white checkerboard picture exactly the size of the screen, as big as fits.
+
+    A white border of at least one square is left around it, because the finder needs to see the board's edge.
+    """
+    columns, rows = inner_corners
+    squares_across, squares_down = columns + 1, rows + 1
+    square_px = min(screen_width // (squares_across + 2), screen_height // (squares_down + 2))
+    picture = np.full((screen_height, screen_width), 255, np.uint8)
+    left = (screen_width - squares_across * square_px) // 2
+    top = (screen_height - squares_down * square_px) // 2
+    for row in range(squares_down):
+        for column in range(squares_across):
+            if (row + column) % 2 == 0:
+                picture[top + row * square_px:top + (row + 1) * square_px,
+                        left + column * square_px:left + (column + 1) * square_px] = 0
+    return picture
 
 
 def find_checkerboard(photo_path: str, inner_corners: tuple[int, int]) -> np.ndarray | None:
@@ -29,14 +50,32 @@ def main(command_line_args: list[str] | None = None) -> int:
     with open("config/vision.yaml") as f:
         vision_settings = yaml.safe_load(f)
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--images", required=True, help="folder of checkerboard photos (.jpg or .png)")
+    parser.add_argument("--images", help="folder of checkerboard photos (.jpg or .png)")
+    parser.add_argument("--make-checkerboard", metavar="OUT.png", help="only write a checkerboard picture for a screen")
+    parser.add_argument("--screen-px", type=int, nargs=2, metavar=("WIDTH", "HEIGHT"),
+                        help="screen resolution in pixels, used with --make-checkerboard")
     parser.add_argument("--inner-corners", type=int, nargs=2, metavar=("COLS", "ROWS"),
                         default=vision_settings["checkerboard"]["inner_corners"])
     parser.add_argument("--square-mm", type=float, default=vision_settings["checkerboard"]["square_mm"])
     parser.add_argument("--output-folder", default="calibration/data")
     args = parser.parse_args(command_line_args)
-    if None in args.inner_corners or args.square_mm is None:
-        parser.error("checkerboard size is still TODO in config/vision.yaml; set it or pass --inner-corners/--square-mm")
+    if None in args.inner_corners:
+        parser.error("set checkerboard.inner_corners in config/vision.yaml or pass --inner-corners")
+
+    if args.make_checkerboard:
+        if args.screen_px is None:
+            parser.error("--make-checkerboard needs --screen-px WIDTH HEIGHT")
+        columns, rows = args.inner_corners
+        cv2.imwrite(args.make_checkerboard, make_checkerboard_picture(tuple(args.inner_corners), *args.screen_px))
+        print(f"Saved {args.make_checkerboard}: {columns + 1}x{rows + 1} squares ({columns}x{rows} inner corners).\n"
+              "Show it full screen at 100% zoom, measure across all squares with a ruler, divide by the number of\n"
+              "squares, and put the result in config/vision.yaml: checkerboard.square_mm.")
+        return 0
+
+    if args.images is None:
+        parser.error("give --images FOLDER (or --make-checkerboard)")
+    if args.square_mm is None:
+        parser.error("checkerboard.square_mm is still TODO in config/vision.yaml; measure it or pass --square-mm")
     inner_corners = tuple(args.inner_corners)
     lens_model = vision_settings["lens_model"]
 

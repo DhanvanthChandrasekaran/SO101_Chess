@@ -6,5 +6,5 @@ threshold: null           # TODO tune on saved images
 # Lens calibration (calibration/camera_intrinsics.py)
 lens_model: fisheye       # 106 deg diagonal FOV; pinhole is the fallback
 checkerboard:
-  inner_corners: [null, null]  # TODO [columns, rows] of inner corners on the printed board
-  square_mm: null              # TODO measured side of one printed square
+  inner_corners: [9, 6]        # [columns, rows] of inner corners; --make-checkerboard draws this size
+  square_mm: null              # TODO measured with a ruler on the screen showing the checkerboard

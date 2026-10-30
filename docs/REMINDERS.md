@@ -30,7 +30,8 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 - [ ] Exposure and white balance: locked with `v4l2-ctl` (decided). The values (`hardware.yaml: exposure`, `white_balance`) are still TODO and need the camera.
 
 ## calibration/camera_intrinsics.py
-- [ ] Checkerboard: inner-corner count and square size in mm (TODO in `vision.yaml`, user will print one). Lens model: fisheye (decided).
+- [ ] Checkerboard shown on a screen (no printer): `python calibration/camera_intrinsics.py --make-checkerboard checkerboard.png --screen-px W H`, opened full screen at 100% zoom. Measure across all squares with a ruler, divide by the number of squares, and set `vision.yaml: checkerboard.square_mm` (TODO). Prefer the laptop (bigger board in the photo). Turn brightness up and tilt to avoid glare; don't let the screen sleep. Lens model: fisheye (decided).
+- [ ] A way to take the ~15-20 checkerboard photos from the camera (decide when the camera is back: `tools/vision_live.py --save` or a capture option).
 
 ## calibration/board_corners.py and vision/board_view.py
 - [ ] Click order is a1, h1, h8, a8 (outer corners of the playing area), so image orientation doesn't matter. The user assumed a1 is at the bottom-left of the camera image; this is only for sanity-checking the clicks.
