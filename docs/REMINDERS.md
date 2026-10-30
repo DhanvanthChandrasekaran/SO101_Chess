@@ -40,7 +40,7 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 - [x] The test images are mirrored left to right (printed letters read backwards; checked 2026-10-29). Flip them before using them as ground truth. In `data/test_images/` the a-h letters read normally along the bottom with white at the bottom, but double-check before using them as ground truth.
 
 ## vision/occupancy.py
-- [ ] Collect the labelled sets with `tools/collect_states.py` (empty ~5, random ~25, one game), then `collect_states.py check` on each: the milestone-2 done-when check.
+- [ ] Collect the labelled sets with `tools/collect_states.py` (empty ~5, one game), then `collect_states.py check` on each: the milestone-2 done-when check. **Random set (~25) skipped for now (user, 2026-10-31)**: it is the main test of same-colour pieces on same-colour squares; do it if the game or `watch_moves.py` shows misses.
 - [ ] **Threshold 50 (provisional until `collect_states.py check`)**: after recolouring the piece tops the slider worked from 30 to 60; the user chose 50. Before that it was 34.3 with a tiny range: the gap between empty and occupied scores was very small (pieces and squares look alike even by eye). The user is recolouring the piece tops; re-find the threshold afterwards (slider, then `collect_states.py check`). If the gap stays small: side lighting, camera contrast/saturation, or edge/texture scoring (test on saved photos first).
 - [ ] Threshold tuning on saved images. Watch for: the folding-board hinge seam between the d and e files, glare on light squares, dark pieces on dark squares (all visible in the test images).
 - [ ] The arm (orange) is in view at the bottom of Test Image 2. The park pose must keep the arm and its shadow off the board during captures.
