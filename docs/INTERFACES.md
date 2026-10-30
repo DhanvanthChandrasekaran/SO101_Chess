@@ -224,6 +224,8 @@ Non-capture candidates have no "capturing" part. It accepts the full UCI move, t
 | `calibration/arm_board.py --park` (teleop to a safe pose out of camera view) | `park_pose.yaml` | `{joint: deg}` for all 6 joints | `kinematics.load_arm_calibration` |
 | `calibration/arm_board.py --squares a1 h1 h8 a8 d4 ...` (teleop the TCP onto each square center at z=0) | `arm_board.yaml` | `board_to_robot_transform` 4x4; `samples` list of `{square, point_from_robot}`; `square_corrections` list of `{board_x_y, correction_x_y}` = leftover error after the fit | `kinematics.load_arm_calibration` |
 
+`calibration/camera_exposure.py` (interactive, needs the camera) is the one script that writes into `config/`: its Save button replaces only the `exposure:` and `white_balance:` values in `config/hardware.yaml` and prints the change. It shows the live picture with sliders for both values, the share of blown-out and crushed pixels, and an Auto button that lets the camera choose and then locks what it chose. It reads the allowed ranges from `v4l2-ctl --list-ctrls` and prints any other automatic camera settings it finds.
+
 Command-line options of the two vision calibration scripts (both default to writing `calibration/data/`; `--output-folder` sends the files elsewhere, e.g. a trial folder under `data/images/`):
 - `camera_intrinsics.py --images DIR [--inner-corners COLS ROWS] [--square-mm MM] [--output-folder DIR]`. The checkerboard defaults and `lens_model` come from `config/vision.yaml`.
 - `camera_intrinsics.py --make-checkerboard OUT.png --screen-px WIDTH HEIGHT [--inner-corners COLS ROWS]` only writes a checkerboard picture sized for a screen (no calibration). Show it full screen at 100% zoom on a laptop or phone, measure one square with a ruler, and put that in `vision.yaml: checkerboard.square_mm`.
@@ -261,6 +263,7 @@ The URDF is an external file, like the lerobot clone, referenced through `arm.ya
 - Workspace violations raise in `plan_waypoints`. `Arm.set_joint_targets` still clamps joints as the last line of defense.
 - Approved: plain-language names (CLAUDE.md rule 13) for vision, control and main: e.g. `grab` → `take_photo`, `warp` → `top_down_view`, `ik`/`fk` → `joint_angles_for`/`gripper_position_for`, `plan_ops`/`execute` → `plan_waypoints`/`run_waypoints`, `ctx` → `settings`, `acal` → `arm_calibration`. Motion's outputs are called waypoints, so "steps" means only `get_robot_move`'s output. Types and behaviour unchanged.
 - Approved: exposure and white balance are locked with `v4l2-ctl` (OpenCV's V4L2 exposure properties are unreliable). `open_camera` refuses to run on auto values.
+- Approved: `calibration/camera_exposure.py` writes `exposure` and `white_balance` straight into `config/hardware.yaml` (option A), so `open_camera` and its contract stay unchanged.
 - Approved: matplotlib (not OpenCV windows, since the env has `opencv-python-headless`) for the corner clicks and `tools/vision_live.py`.
 - Synthetic vision data (`tools/make_synthetic.py`) was tried and dropped (user, 2026-10-31): vision is developed on real photos only.
 - Approved: the lens checkerboard is shown on a laptop or phone screen (no printer), from `camera_intrinsics.py --make-checkerboard`.

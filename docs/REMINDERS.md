@@ -27,7 +27,7 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 - [x] Device found: `/dev/v4l/by-id/usb-Xitech_USB_Camera_20250606105-video-index0`. MJPG modes up to 2592x1944 at 30 fps; YUYV is slow at high resolution.
 - [x] 2592x1944 is the full field of view (about 20 fps). 1920x1080 is a crop, so don't use it. Only one app can stream at a time, so close Cheese first.
 - [x] **The printed board labels are rotated 180° from our convention.** In the mounted setup (white at the robot's side), the printed "h8" corner is our a1. Ignore the printed letters: a1 = the dark square nearest the robot, on its left (bottom-left of the camera image). Confirmed by the user; `data/images/probe/probe_2592x1944.jpg` shows the dark a1 at the bottom-left with the robot at the bottom.
-- [ ] Exposure and white balance: locked with `v4l2-ctl` (decided). The values (`hardware.yaml: exposure`, `white_balance`) are still TODO and need the camera.
+- [ ] Exposure and white balance: locked with `v4l2-ctl` (decided). Pick the values with `python calibration/camera_exposure.py` under the final lighting (Auto, adjust, Save); it writes them into `hardware.yaml`. Check the other automatic settings it lists (gain, autofocus) and raise them.
 
 ## calibration/camera_intrinsics.py
 - [ ] Checkerboard shown on a screen (no printer): `python calibration/camera_intrinsics.py --make-checkerboard checkerboard.png --screen-px W H`, opened full screen at 100% zoom. Measure across all squares with a ruler, divide by the number of squares, and set `vision.yaml: checkerboard.square_mm` (TODO). Prefer the laptop (bigger board in the photo). Turn brightness up and tilt to avoid glare; don't let the screen sleep. Lens model: fisheye (decided).
