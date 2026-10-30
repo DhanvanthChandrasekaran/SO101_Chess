@@ -66,15 +66,22 @@ def outline_distance(outline: np.ndarray, other_outline: np.ndarray) -> float:
     return min(same_order, turned_round)
 
 
+def outline_size(outline: np.ndarray) -> float:
+    """How big the board looks, in pixels (square root of the area inside its four outer corners)."""
+    return float(np.sqrt(cv2.contourArea(outline.astype(np.float32))))
+
+
 def capture_checkerboard_photos(output_folder: str, inner_corners: tuple[int, int], capture_settings: dict) -> int:
     """Watch the camera and save a raw photo each time the board is held still somewhere new. Returns photos saved."""
     with open("config/hardware.yaml") as f:
         camera_settings = yaml.safe_load(f)["camera"]
     live_camera = camera.open_camera(camera_settings)
     os.makedirs(output_folder, exist_ok=True)
+    print("Capture settings (edit in config/vision.yaml, checkerboard.capture):", capture_settings)
     columns = inner_corners[0]
-    saved_outlines, previous_corners = [], None
+    saved_outlines, previous_corners, picture_on_screen = [], None, None
     figure, axes = plt.subplots(figsize=(12, 9))
+    axes.axis("off")
     plt.ion()
     try:
         while plt.fignum_exists(figure.number) and len(saved_outlines) < capture_settings["target_photos"]:
@@ -82,24 +89,45 @@ def capture_checkerboard_photos(output_folder: str, inner_corners: tuple[int, in
             image_diagonal_px = float(np.hypot(photo.shape[0], photo.shape[1]))
             shrink = QUICK_SEARCH_WIDTH_PX / photo.shape[1]
             small = cv2.resize(photo, None, fx=shrink, fy=shrink, interpolation=cv2.INTER_AREA)
+            small_grey = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
             found, small_corners = cv2.findChessboardCorners(
-                cv2.cvtColor(small, cv2.COLOR_BGR2GRAY), inner_corners,
+                small_grey, inner_corners,
                 cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE | cv2.CALIB_CB_FAST_CHECK)
 
             if not found:
                 status, previous_corners = "board not found: show the whole board", None
             else:
+                # The quick search gives whole pixels of the shrunk copy, which jump by several full-size pixels
+                # between identical frames; refining them first stops a still board from looking like it moves.
+                small_corners = cv2.cornerSubPix(small_grey, small_corners, (3, 3), (-1, -1),
+                                                 (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 20, 0.01))
                 corners = small_corners.reshape(-1, 2) / shrink  # back to full-size pixels
                 outline = corners[[0, columns - 1, -1, -columns]]  # the four outer inner-corners
-                held_still = (previous_corners is not None and
-                              np.linalg.norm(corners - previous_corners, axis=1).max() <= capture_settings["still_px"])
+                movement_px = (np.inf if previous_corners is None
+                               else np.linalg.norm(corners - previous_corners, axis=1).max())
+                held_still = movement_px <= capture_settings["still_px"]
+                # New if, compared with every saved photo, the board is somewhere else / tilted differently,
+                # or clearly nearer or farther (moving straight towards the camera hardly shifts the corners).
                 far_enough = capture_settings["min_change_frac"] * image_diagonal_px
-                somewhere_new = all(outline_distance(outline, saved) > far_enough for saved in saved_outlines)
+                nearest_px, smallest_size_change = np.inf, np.inf
+                somewhere_new = True
+                for saved in saved_outlines:
+                    distance = outline_distance(outline, saved)
+                    size_change = abs(outline_size(outline) / outline_size(saved) - 1)
+                    nearest_px = min(nearest_px, distance)
+                    smallest_size_change = min(smallest_size_change, size_change)
+                    if distance <= far_enough and size_change <= capture_settings["min_size_change_frac"]:
+                        somewhere_new = False
                 previous_corners = corners
+                numbers = (f"moved {movement_px:.0f}px (still if <= {capture_settings['still_px']})"
+                           if saved_outlines == [] else
+                           f"moved {movement_px:.0f}px (<= {capture_settings['still_px']}), "
+                           f"from nearest saved {nearest_px:.0f}px (> {far_enough:.0f}) "
+                           f"or size {100 * smallest_size_change:.0f}% (> {100 * capture_settings['min_size_change_frac']:.0f}%)")
                 if not somewhere_new:
-                    status = "already have this spot: move or tilt the board"
+                    status = f"already have this spot: move, tilt, or go nearer/farther\n{numbers}"
                 elif not held_still:
-                    status = "new spot: hold still ..."
+                    status = f"new spot: hold still ...\n{numbers}"
                 elif find_checkerboard(cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY), inner_corners) is None:
                     status = "full-size check failed (blur or glare?): hold still"
                 else:
@@ -114,9 +142,10 @@ def capture_checkerboard_photos(output_folder: str, inner_corners: tuple[int, in
                 cv2.polylines(preview, [np.round(saved * shrink).astype(np.int32)], True, (0, 200, 0), 2)
             if found:
                 cv2.drawChessboardCorners(preview, inner_corners, small_corners, found)
-            axes.clear()
-            axes.imshow(preview)
-            axes.axis("off")
+            if picture_on_screen is None:
+                picture_on_screen = axes.imshow(preview)
+            else:
+                picture_on_screen.set_data(preview)
             axes.set_title(f"{len(saved_outlines)}/{capture_settings['target_photos']} saved (green = done)   {status}")
             plt.pause(0.01)
     except KeyboardInterrupt:
