@@ -9,7 +9,7 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 |---|---|---|---|
 | 1 | **Chess brain**: work out the human's move from before/after occupancy; Stockfish reply; reply turned into move/remove steps for the arm | `chess_logic/*`, `tests/test_chess_logic.py` | `pytest` green: quiet, capture, both castles, en passant, promotion, ambiguous capture, misread/noise; engine smoke test |
 | 2 | ✅ **Robot can see** (done 2026-10-31, see notes below the table): labelled-photo collection script (random positions + move-by-move game + empty board), intrinsics/undistort, corner clicks + top-down view, occupancy, live overlay | `tools/collect_states.py`, `tools/watch_moves.py` (approved new files), `vision/*`, `calibration/camera_intrinsics.py`, `calibration/board_corners.py`, `tools/vision_live.py` | 100% of squares correct on all collected photos; the recorded game's moves are all recovered by `find_human_move` (ambiguous captures may return several candidates); live overlay looks right; a live `tools/watch_moves.py` game of ~20 moves (both colours, incl. a capture, castling and en passant) names every move correctly |
-| 3 | **Arm in simulation**: lerobot IK on the URDF, pick/place sequences, MockArm | `control/kinematics.py`, `control/motion.py`, `control/arm.py` (MockArm), `tests/test_kinematics.py` | valid IK for all 64 squares + graveyard (or a list of unreachable ones, so the board can be moved); `tests/hardware/pick_place.py e2 e4 --mock` prints a smooth, slow trajectory |
+| 3 | **Arm in simulation**: lerobot IK on the URDF, pick/place sequences, MockArm. `calibration/arm_board.py` is built here too (it only reads the limp arm, never drives it), so the reach test uses the real board position | `control/kinematics.py`, `control/motion.py`, `control/arm.py` (MockArm), `tests/test_kinematics.py`, `calibration/arm_board.py`, `tests/hardware/pick_place.py` (`--mock` only) | valid IK for all 64 squares + graveyard (or a list of unreachable ones, so the board can be moved); `tests/hardware/pick_place.py e2 e4 --mock` prints a smooth, slow trajectory |
 | 4 | **Arm on hardware**: real driver, safety (limits, slow speed, Ctrl-C parks then goes limp), teleop arm-to-board calibration, real pick/place | `control/arm.py` (Arm), `calibration/arm_board.py`, `tests/hardware/pick_place.py` | 20/20 moves without drops, plus a capture to the graveyard (special moves are done by the human, INTERFACES §2.13) |
 | 5 | **Full game**: `main.py` loop with verify/retry/ask-human and logging; first `--mock --images` replay of the recorded game, then real | `main.py` | replay passes (including a forced mismatch → retry → ask human, a recorded ambiguous capture → ambiguity prompt → typed answer, and a robot special move made by the human); one full real game |
 
@@ -48,11 +48,11 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 - [ ] The arm (orange) is in view at the bottom of Test Image 2. The park pose must keep the arm and its shadow off the board during captures.
 
 ## control/kinematics.py (milestone 3)
-- [ ] Download `so101_new_calib.urdf` (SO-ARM100 repo, `Simulation/SO101/`), set `arm.yaml: urdf_path`, and document its base-frame axes in INTERFACES.md §2.7.
+- [x] Download `so101_new_calib.urdf` (SO-ARM100 repo, `Simulation/SO101/`), set `arm.yaml: urdf_path`, and document its base-frame axes in INTERFACES.md §2.7. Done 2026-10-31: copied with its meshes into `control/urdf/`.
 - [ ] Check that lerobot 0° matches URDF zero on the real arm (FK of the teleop pose vs a tape measure). If it's off, either add per-joint offsets or recalibrate with `lerobot-calibrate`.
-- [ ] `tcp_offset_m`: from `gripper_frame_link` to the end/middle of the open jaws.
+- [ ] `tcp_offset_m`: from `gripper_frame_link` to the end/middle of the open jaws. Proposed from the meshes: `[-0.008, 0.0, 0.004]` (`gripper_frame_link` sits at the fixed jaw's tip; +z points out of the jaws; the moving jaw is on the −x side; a gripped piece rests against the fixed jaw, so its centre is about one radius toward −x). Check with a ruler while holding a pawn in the jaws.
 - [ ] **Reach**: the far corners (a8/h8) may be at the limit. The user will move the board closer if needed. Run the IK test on all 64 squares first.
-- [ ] Pitch schedule values (`pitch_near_deg`, `pitch_far_deg`, `reach_near_m`, `reach_far_m`) and `wrist_roll_deg`.
+- [ ] Pitch schedule values (`pitch_near_deg`, `pitch_far_deg`, `reach_near_m`, `reach_far_m`) and `wrist_roll_deg`. How: during `arm_board.py`, hold each corner in the pose you'd pick a piece with (jaws opening sideways); it prints suggested values to copy into `arm.yaml`.
 
 ## control/arm.py (milestones 3-4)
 - [ ] Gripper 0-100: which end is open; `gripper_open`/`gripper_close` values.
@@ -62,9 +62,9 @@ Order: 1, then 2 and 3 in either order (independent), then 4, then 5.
 
 ## control/motion.py
 - [ ] **`travel_height_m` must clear a king while carrying a king**: carried piece bottom = travel z − grip z. With grip at 0.7 × 4.9 cm ≈ 3.4 cm, travel needs > 4.9 + 3.4 + margin ≈ 9-10 cm. `hover_height_m: 0.07` is "above the piece top", so it's fine.
-- [ ] `max_joint_speed_deg_s`, plus the graveyard spot (`board.yaml: graveyard_xy_m`, board frame, in reach).
+- [ ] `max_joint_speed_deg_s`, plus the graveyard spot (`board.yaml: graveyard_xy_m`, board frame, in reach). Graveyard and travel height: measure with `arm_board.py --point`.
 - [ ] Piece heights for knight, bishop, rook and queen (`board.yaml`).
 
 ## calibration/arm_board.py (milestone 4)
-- [ ] Teleop squares for the sparse offsets: start with a1, h1, h8, a8, plus d4/e5. Add more later with `--squares`.
+- [ ] Hand-guided squares for the board fit (now in milestone 3): a1, h1, h8, a8 by default. Add d4/e5 or more later with `--squares` if the middle is off.
 - [ ] Record the park pose: out of the camera's view of the board, and safe to drop to when torque is disabled.

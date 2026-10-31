@@ -3,12 +3,13 @@
 # Kinematics: lerobot RobotKinematics (placo) on the SO101 URDF
 urdf_path: control/urdf/so101_new_calib.urdf  # copy of SO-ARM100 Simulation/SO101 (commit a758567), relative to the repo root
 target_frame: gripper_frame_link
-tcp_offset_m: [0.0, 0.0, 0.0]  # TODO target_frame -> TCP (end/middle of open stock jaws), in target_frame axes
+tcp_offset_m: [-0.008, 0.0, 0.004]  # TODO check with a ruler. target_frame -> TCP (centre of a gripped piece at the jaw tips), target_frame axes:
+                           # +z out of the jaws, moving jaw on -x. Proposed from the URDF meshes (frame sits at the fixed jaw tip)
 ik_orientation_weight: 0.1 # TODO tune; position weight is 1.0
 ik_max_iters: 50
 ik_pos_tol_m: 0.002        # FK check after IK; worse -> unreachable
 ik_pitch_tol_deg: 3.0
-joint_limits_deg:          # TODO: read from teleop; arm.send clamps, ik rejects
+joint_limits_deg:          # TODO: read from teleop; arm.send clamps, ik rejects. null = only the URDF limit applies
   shoulder_pan: [null, null]
   shoulder_lift: [null, null]
   elbow_flex: [null, null]
@@ -36,6 +37,10 @@ gripper_close: null        # TODO (fully closed is fine)
 gripper_torque: 300        # TODO Max_Torque_Limit 0-1000 (lerobot default 500)
 gripper_wait_s: 0.4
 
+# calibration/arm_board.py (hand-guided, torque off)
+calibration_sample_s: 0.5      # average the joint readings over this long when you press Enter
+calibration_max_error_m: 0.005 # TODO confirm; warn if a touched square is further than this from the fitted board
+
 # Speed
 max_speed_scale: 0.3       # keep low until tuned
 max_joint_speed_deg_s: null  # TODO
@@ -45,4 +50,5 @@ step_timeout_s: 5.0
 
 # Used ONLY with --mock when calibration/data/ is missing
 nominal:
-  board_origin_base_m: [null, null, 0.0]  # TODO a1 outer corner in base frame (~5 cm gap + border)
+  board_origin_base_m: [null, null, 0.0]  # TODO a1 outer corner in base frame (~5 cm gap + border); board +x = base -y
+  park_pose_deg: null      # TODO {shoulder_pan: .., ..., gripper: ..} all 6 joints
